@@ -196,9 +196,9 @@
 <body>
 
 <div class="wrapper">
-    <!-- TOGGLE BUTTON FOR ADMIN VIEW TESTING -->
-    <div style="text-align: right; margin-bottom: 10px;">
-        <button onclick="toggleAdminPanel()" style="padding: 6px 12px; font-size: 11px; background: #333; color: #f0b90b; width: auto; border-radius: 4px;">⚙️ Admin Panel Simulation</button>
+    <!-- ADMIN BUTTON (Hidden by default unless it's you) -->
+    <div id="adminButtonWrapper" style="text-align: right; margin-bottom: 10px; display: none;">
+        <button onclick="toggleAdminPanel()" style="padding: 6px 12px; font-size: 11px; background: #333; color: #f0b90b; width: auto; border-radius: 4px;">⚙️ Admin Panel</button>
     </div>
 
     <!-- STEP 1 OF 2 -->
@@ -216,7 +216,6 @@
             <div class="form-group">
                 <label>Full Name *</label>
                 <input type="text" id="fullName" required placeholder="As it appears on your National ID">
-                <div class="note">Enter your name exactly as it appears on your National ID.</div>
             </div>
 
             <div class="form-group">
@@ -264,7 +263,6 @@
                 <label>National ID - Front Side *</label>
                 <div class="upload-box" id="frontBox">
                     <span>📄 Click to upload front side</span>
-                    <div style="font-size: 10px; color: #777;">Max size: 10MB</div>
                     <input type="file" id="idFront" accept="image/*" required onchange="handleFileSelect(this, 'frontPreview', 'frontBox')">
                 </div>
                 <div class="upload-preview" id="frontPreview">✔ Ready</div>
@@ -274,7 +272,6 @@
                 <label>National ID - Back Side *</label>
                 <div class="upload-box" id="backBox">
                     <span>📄 Click to upload back side</span>
-                    <div style="font-size: 10px; color: #777;">Max size: 10MB</div>
                     <input type="file" id="idBack" accept="image/*" required onchange="handleFileSelect(this, 'backPreview', 'backBox')">
                 </div>
                 <div class="upload-preview" id="backPreview">✔ Ready</div>
@@ -318,12 +315,6 @@
             <div class="info-row"><span>Phone</span><span id="resPhone"></span></div>
         </div>
 
-        <div class="info-card">
-            <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">What Happens Next?</div>
-            <div class="check-list-item">✅ <div><b>Document Review:</b> Admin verifies identity documents.</div></div>
-            <div class="check-list-item">✅ <div><b>Account Activation:</b> Once approved, you can access trading.</div></div>
-        </div>
-
         <button class="secondary" style="width: 100%; margin-top: 10px;" onclick="checkApprovalStatus()">Check Status Now</button>
     </div>
 
@@ -331,10 +322,8 @@
     <div id="view-admin" class="view-section">
         <h2>🛠️ Admin Approval Panel</h2>
         <p style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Review pending user registration submissions.</p>
-        <div id="adminUserList">
-            <!-- Dynamic Submissions will appear here -->
-        </div>
-        <button class="secondary" style="width: 100%; margin-top: 15px;" onclick="closeAdminPanel()">← Back to Registration</button>
+        <div id="adminUserList"></div>
+        <button class="secondary" style="width: 100%; margin-top: 15px;" onclick="closeAdminPanel()">← Back</button>
     </div>
 </div>
 
@@ -370,14 +359,23 @@
     const tg = window.Telegram.WebApp;
     try { tg.expand(); } catch(e){}
 
-    let formData = {};
+    // Admin Telegram ID configured
+    const MY_ADMIN_TELEGRAM_ID = 8216936710;
 
-    // Generate a unique dummy ID for the current browser session
-    let currentUserId = localStorage.getItem('p2p_user_id');
-    if (!currentUserId) {
-        currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
+    // Check if the current user is the admin
+    const telegramUser = tg.initDataUnsafe?.user;
+    const currentUserId = telegramUser ? telegramUser.id : (localStorage.getItem('p2p_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+    
+    if (!telegramUser) {
         localStorage.setItem('p2p_user_id', currentUserId);
     }
+
+    // Reveal admin button only if the logged-in Telegram user matches your ID
+    if (telegramUser && telegramUser.id === MY_ADMIN_TELEGRAM_ID) {
+        document.getElementById('adminButtonWrapper').style.display = 'block';
+    }
+
+    let formData = {};
 
     function goToStep2(e) {
         e.preventDefault();
@@ -436,28 +434,15 @@
         closeSecretModal();
         
         const loader = document.getElementById('loaderModal');
-        const percentage = document.getElementById('loaderPercentage');
-        const statusText = document.getElementById('loaderStatusText');
         loader.style.display = 'flex';
-
-        setTimeout(() => {
-            percentage.innerText = '50%';
-            statusText.innerText = 'Encrypting & uploading documents...';
-        }, 1000);
-
-        setTimeout(() => {
-            percentage.innerText = '100%';
-            statusText.innerText = 'Finalizing...';
-        }, 2200);
 
         setTimeout(() => {
             loader.style.display = 'none';
 
-            // Save submission record to localStorage database simulation
             const registrationRecord = {
                 id: currentUserId,
                 ...formData,
-                status: 'pending', // pending, approved, rejected
+                status: 'pending',
                 date: new Date().toLocaleString()
             };
 
@@ -465,14 +450,12 @@
             allRegistrations[currentUserId] = registrationRecord;
             localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
 
-            // Populate Status Dashboard fields
             updateDashboardDisplay(registrationRecord);
 
-            // Switch to Status View
             document.getElementById('view-step-2').classList.remove('active');
             document.getElementById('view-status').classList.add('active');
             window.scrollTo(0, 0);
-        }, 3000);
+        }, 2000);
     }
 
     function updateDashboardDisplay(record) {
@@ -495,19 +478,13 @@
             mainTitle.innerText = 'Account Approved!';
             subTitle.innerText = 'You are ready to trade';
             badgeTitle.innerText = '🟢 Verification Successful';
-            badgeDesc.innerText = 'Your identity documents have been approved by the admin team.';
+            badgeDesc.innerText = 'Your identity documents have been approved.';
         } else if (record.status === 'rejected') {
             icon.innerText = '❌';
             mainTitle.innerText = 'Registration Rejected';
             subTitle.innerText = 'Action required';
             badgeTitle.innerText = '🔴 Approval Denied';
-            badgeDesc.innerText = 'Your documents did not meet requirements. Please contact support or restart registration.';
-        } else {
-            icon.innerText = '⏳';
-            mainTitle.innerText = 'Registration Submitted!';
-            subTitle.innerText = 'Your account is under review';
-            badgeTitle.innerText = '🟡 Pending Admin Approval';
-            badgeDesc.innerText = 'Our team is reviewing your registration details and documents.';
+            badgeDesc.innerText = 'Your registration documents did not meet requirements.';
         }
     }
 
@@ -521,29 +498,19 @@
         }
 
         updateDashboardDisplay(record);
-
-        if (record.status === 'approved') {
-            alert('Great news! Your account has been approved.');
-        } else if (record.status === 'rejected') {
-            alert('Your registration request was rejected by admin.');
-        } else {
-            alert('Status update: Still pending admin review.');
-        }
+        alert(`Account status: ${record.status.toUpperCase()}`);
     }
 
-    // --- ADMIN PANEL FUNCTIONS ---
     function toggleAdminPanel() {
         const adminView = document.getElementById('view-admin');
         const isVisible = adminView.classList.contains('active');
 
-        // Hide all views first
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
 
         if (!isVisible) {
             renderAdminUserList();
             adminView.classList.add('active');
         } else {
-            // Default back to status or step 1
             let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
             if (allRegistrations[currentUserId]) {
                 document.getElementById('view-status').classList.add('active');
@@ -592,7 +559,7 @@
         if (allRegistrations[userId]) {
             allRegistrations[userId].status = newStatus;
             localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
-            alert(`User status successfully updated to: ${newStatus.toUpperCase()}`);
+            alert(`User status updated to: ${newStatus.toUpperCase()}`);
             renderAdminUserList();
         }
     }
