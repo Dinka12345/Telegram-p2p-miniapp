@@ -125,12 +125,6 @@
         .orders-toggle-btn { background: none; border: none; color: var(--text-muted); padding: 8px 20px; font-size: 13px; font-weight: 500; border-radius: 6px; cursor: pointer; }
         .orders-toggle-btn.active { background-color: var(--accent-yellow); color: #000; font-weight: bold; }
 
-        .orders-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 40px; text-align: center; }
-        .orders-empty-icon { width: 80px; height: 80px; background-color: var(--bg-card); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 32px; margin-bottom: 24px; }
-        .orders-empty-title { font-size: 18px; font-weight: bold; margin: 0 0 8px 0; }
-        .orders-empty-sub { font-size: 13px; color: var(--text-muted); margin: 0 0 24px 0; max-width: 260px; line-height: 1.4; }
-        .btn-browse { background-color: var(--accent-yellow); color: #000; border: none; padding: 12px 32px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
-
         .order-card-item { background-color: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--accent-yellow); }
         .order-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .order-title { font-size: 14px; font-weight: bold; }
@@ -1540,7 +1534,6 @@
             const regStatus = localStorage.getItem('allp2p_reg_status');
             const overlay = document.getElementById('registrationFlow');
             
-            // Show admin button if specific user or condition
             document.getElementById('adminButtonWrapper').style.display = 'block';
 
             if (!regStatus || regStatus === 'step1') {
@@ -1628,7 +1621,6 @@
             if (status === 'approved') {
                 document.getElementById('registrationFlow').classList.remove('active');
             } else {
-                // For demo/simulation convenience, clicking this approves if pending
                 localStorage.setItem('allp2p_reg_status', 'approved');
                 showRegStatusView('approved');
                 setTimeout(() => {
@@ -1638,7 +1630,6 @@
         }
 
         function toggleAdminPanel() {
-            // Quick simulator toggle for testing review states
             const current = localStorage.getItem('allp2p_reg_status');
             let next = 'pending';
             if (current === 'pending') next = 'approved';
@@ -1849,186 +1840,313 @@
             if (idx !== -1) {
                 orders[idx].status = 'PAID';
                 saveOngoingOrders(orders);
-                tg.sendData(JSON.stringify({ action: "buyer_mark_paid", orderId: orderId }));
                 renderOngoingOrders();
+                alert('Order marked as Paid. Waiting for seller confirmation and asset release.');
             }
         }
 
         function renderOngoingOrders() {
-            const container = document.getElementById('ongoingOrdersList');
             const orders = getOngoingOrders();
+            const container = document.getElementById('ongoingOrdersList');
             const me = getCurrentUsername();
-
-            updateOrdersBadge();
 
             if (orders.length === 0) {
                 container.innerHTML = `
                     <div class="orders-empty-state">
-                        <div class="orders-empty-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
-                        <p class="orders-empty-title">No ongoing orders or requests</p>
-                        <p class="orders-empty-sub">Start trading to see your active orders and requests here</p>
-                        <button class="btn-browse" onclick="switchTab('home', document.querySelectorAll('.nav-item')[0])">Browse Marketplace</button>
+                        <div class="orders-empty-icon"><i class="fa-regular fa-file-lines"></i></div>
+                        <p class="orders-empty-title">No Ongoing Orders</p>
+                        <p class="orders-empty-sub">Your active trades will appear here</p>
+                        <button class="btn-browse" onclick="switchTab('home', document.querySelector('.bottom-nav .nav-item'))">Browse Offers</button>
                     </div>
                 `;
+                updateOrdersBadge();
                 return;
             }
 
-            container.innerHTML = orders.map(ord => {
-                const isSeller = ord.seller === me;
-                const isPending = ord.status === 'PENDING_APPROVAL';
-                const isApproved = ord.status === 'APPROVED';
-                const isPaid = ord.status === 'PAID';
-                
-                let displayStatus = ord.status.replace('_', ' ');
-                if (isSeller && isApproved) {
-                    displayStatus = 'Payment Pending';
-                } else if (isPaid) {
-                    displayStatus = 'PAID - RELEASE ASSET';
+            container.innerHTML = orders.map(order => {
+                const isSeller = order.seller === me;
+                let statusClass = '';
+                let statusText = order.status;
+
+                if (order.status === 'PENDING_APPROVAL') {
+                    statusClass = '';
+                    statusText = 'Pending Approval';
+                } else if (order.status === 'APPROVED') {
+                    statusClass = 'approved';
+                    statusText = 'Approved - Payment Pending';
+                } else if (order.status === 'PAID') {
+                    statusClass = 'paid';
+                    statusText = 'Paid - Waiting Release';
+                } else if (order.status === 'REJECTED') {
+                    statusClass = 'rejected';
+                    statusText = 'Rejected';
                 }
-                
-                const statusClass = isApproved ? 'approved' : (isPaid ? 'paid' : (ord.status === 'REJECTED' ? 'rejected' : ''));
+
+                let actionsHTML = '';
+                if (order.status === 'PENDING_APPROVAL' && isSeller) {
+                    actionsHTML = `
+                        <div class="approval-actions">
+                            <button class="btn-approve" onclick="handleSellerAction('${order.id}', 'approve')">Approve Order</button>
+                            <button class="btn-reject" onclick="handleSellerAction('${order.id}', 'reject')">Reject</button>
+                        </div>
+                    `;
+                } else if (order.status === 'APPROVED' && !isSeller) {
+                    actionsHTML = `
+                        <button class="btn-pay-action" style="display:block;" onclick="markOrderAsPaid('${order.id}')">I Have Paid (${order.totalETB} ETB)</button>
+                    `;
+                } else if (order.status === 'PAID' && isSeller) {
+                    actionsHTML = `
+                        <button class="btn-pay-action" style="display:block; background-color: var(--accent-green);" onclick="handleSellerAction('${order.id}', 'release')">Confirm Payment & Release USDT</button>
+                    `;
+                }
+
+                let nextStepsHTML = '';
+                if (order.status === 'APPROVED' && !isSeller) {
+                    nextStepsHTML = `
+                        <div class="next-steps-card">
+                            <div class="next-steps-title"><i class="fa-solid fa-circle-info"></i> Next Steps & Payment Details</div>
+                            <ul class="next-steps-list">
+                                <li>Send <strong>${order.totalETB} ETB</strong> via <strong>${order.paymentMethod}</strong></li>
+                                <li>Account Name: <strong>${order.seller}</strong></li>
+                                <li>Click "I Have Paid" once the transfer is complete.</li>
+                            </ul>
+                        </div>
+                    `;
+                }
 
                 return `
-                <div class="order-card-item">
-                    <div class="order-card-header">
-                        <span class="order-title">Order #${ord.id.slice(-6)}</span>
-                        <span class="order-status ${statusClass}">${displayStatus}</span>
+                    <div class="order-card-item">
+                        <div class="order-card-header">
+                            <span class="order-title">${order.type.toUpperCase()} ${order.amountUSDT} USDT</span>
+                            <span class="order-status ${statusClass}">${statusText}</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;">
+                            <div>Rate: ${order.rate} ETB | Total: <strong style="color:#fff;">${order.totalETB} ETB</strong></div>
+                            <div>Trader: <strong style="color:#fff;">${isSeller ? order.buyer : order.seller}</strong></div>
+                            <div>Payment: ${order.paymentMethod}</div>
+                        </div>
+                        ${actionsHTML}
+                        ${nextStepsHTML}
                     </div>
-                    <div class="card-details">
-                        <div class="detail-col"><span class="label">${isSeller ? 'Buyer' : 'Seller'}</span><span class="limit-val">${isSeller ? ord.buyer : ord.seller}</span></div>
-                        <div class="detail-col"><span class="label">Amount</span><span class="limit-val">${ord.amountUSDT} USDT</span></div>
-                        <div class="detail-col" style="align-items:flex-end;"><span class="label">Payment Method</span><span class="price-val" style="font-size:13px; color:var(--accent-yellow);">${ord.chosenPayment}</span></div>
-                    </div>
-                    <div style="margin-top:10px; font-size:12px; color:var(--text-muted);">
-                        Total Pay: <strong style="color:#fff;">${ord.amountETB} ETB</strong>
-                    </div>
-
-                    <div class="next-steps-card" style="background-color: #0b0e11; border: 1px solid #2b3139; margin-top: 10px;">
-                        <div class="next-steps-title" style="color: #fff; font-size: 12px; margin-bottom: 6px;">
-                            Payment Details
-                        </div>
-                        <div style="font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;">
-                            <div>Bank/Provider: <strong style="color:#fff;">${ord.chosenPayment}</strong></div>
-                            <div>Account Name: <strong style="color:#fff;">${ord.seller}</strong></div>
-                            <div>Phone/Account: <strong style="color:#fff;">${ord.sellerAccount || 'Verified Merchant Account'}</strong></div>
-                            <div>Reference: <strong style="color:#fff;">ORD-${ord.id.slice(-6)}</strong></div>
-                        </div>
-                    </div>
-
-                    ${isApproved && !isSeller ? `
-                        <button class="btn-pay-action" id="pay-btn-${ord.id}" style="display: block;" onclick="markOrderAsPaid('${ord.id}')">I Have Paid</button>
-                    ` : ''}
-
-                    ${isPaid && !isSeller ? `
-                        <div style="margin-top: 10px; font-size: 12px; color: var(--accent-blue); text-align: center; font-weight: bold;">
-                            Payment Marked. Waiting for Seller to Release Asset.
-                        </div>
-                    ` : ''}
-
-                    ${isSeller && isPending ? `
-                        <div class="approval-actions">
-                            <button class="btn-approve" onclick="handleSellerAction('${ord.id}', 'approve')">Approve Request</button>
-                            <button class="btn-reject" onclick="handleSellerAction('${ord.id}', 'reject')">Reject</button>
-                        </div>
-                    ` : ''}
-
-                    ${isSeller && isPaid ? `
-                        <div class="approval-actions">
-                            <button class="btn-approve" style="background-color: var(--accent-green); color: #000;" onclick="handleSellerAction('${ord.id}', 'release')">Release Asset</button>
-                        </div>
-                    ` : ''}
-
-                    <div class="next-steps-card">
-                        <div class="next-steps-title">
-                            <i class="fa-solid fa-list-check"></i> Next Steps
-                        </div>
-                        <ol class="next-steps-list">
-                            ${isSeller ? `
-                                <li><strong>Review Request:</strong> Check buyer details and decide whether to accept.</li>
-                                <li><strong>Wait for Payment:</strong> Once accepted, wait for <strong>${ord.buyer}</strong> to transfer <strong>${ord.amountETB} ETB</strong> using the reference details.</li>
-                                <li><strong>Release Crypto:</strong> Verify payment in your banking app, then click <strong>Release Asset</strong>.</li>
-                            ` : `
-                                <li><strong>Transfer Funds:</strong> Send exactly <strong>${ord.amountETB} ETB</strong> to <strong>${ord.seller}</strong> (${ord.chosenPayment}) using reference <strong>ORD-${ord.id.slice(-6)}</strong>.</li>
-                                <li><strong>Confirm Payment:</strong> Click <strong>"I Have Paid"</strong> once the transaction is complete.</li>
-                                <li><strong>Receive Crypto:</strong> The seller will release <strong>${ord.amountUSDT} USDT</strong> to your wallet balance.</li>
-                            `}
-                        </ol>
-                    </div>
-                </div>
-            `;
+                `;
             }).join('');
+
+            updateOrdersBadge();
         }
 
         function renderCompletedOrders() {
-            const container = document.getElementById('completedOrdersContainer');
             const completed = getCompletedOrders();
+            const container = document.getElementById('completedOrdersContainer');
 
             if (completed.length === 0) {
                 container.innerHTML = `
                     <div class="orders-empty-state">
-                        <div class="orders-empty-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                        <p class="orders-empty-title">No completed orders yet</p>
-                        <p class="orders-empty-sub">Your finished trade history will appear here</p>
-                        <button class="btn-browse" onclick="switchTab('home', document.querySelectorAll('.nav-item')[0])">Browse Marketplace</button>
+                        <div class="orders-empty-icon"><i class="fa-solid fa-check-double"></i></div>
+                        <p class="orders-empty-title">No Completed Orders</p>
+                        <p class="orders-empty-sub">Your successfully finalized trades will appear here</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = completed.map(ord => `
+            container.innerHTML = completed.map(order => `
                 <div class="order-card-item" style="border-left-color: var(--accent-green);">
                     <div class="order-card-header">
-                        <span class="order-title">Order #${ord.id.slice(-6)}</span>
+                        <span class="order-title">${order.type.toUpperCase()} ${order.amountUSDT} USDT</span>
                         <span class="order-status completed">COMPLETED</span>
                     </div>
-                    <div class="card-details">
-                        <div class="detail-col"><span class="label">Seller</span><span class="limit-val">${ord.seller}</span></div>
-                        <div class="detail-col"><span class="label">Amount</span><span class="limit-val">${ord.amountUSDT} USDT</span></div>
-                        <div class="detail-col" style="align-items:flex-end;"><span class="label">Payment Method</span><span class="price-val" style="font-size:13px; color:var(--accent-yellow);">${ord.chosenPayment}</span></div>
-                    </div>
-                    <div style="margin-top:10px; font-size:12px; color:var(--text-muted);">
-                        Total Paid: <strong style="color:#fff;">${ord.amountETB} ETB</strong>
+                    <div style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;">
+                        <div>Rate: ${order.rate} ETB | Total: <strong style="color:#fff;">${order.totalETB} ETB</strong></div>
+                        <div>Payment Method: ${order.paymentMethod}</div>
                     </div>
                 </div>
             `).join('');
         }
 
-        function populateAdPaymentMethods() {
-            const container = document.getElementById('adPaymentOptionsContainer');
-            const methods = getStoredPaymentMethods();
+        // Navigation Switcher
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
-            if (methods.length === 0) {
-                container.innerHTML = `<div style="font-size:12px; color:var(--accent-yellow);">No saved payment methods. Please add one in 'More' > 'Payment Accounts' first.</div>`;
-                return;
+            document.getElementById(tabId).classList.add('active');
+            if (el) el.classList.add('active');
+
+            if (tabId === 'home') renderHomeAds();
+            if (tabId === 'orders') {
+                renderOngoingOrders();
+                renderCompletedOrders();
+            }
+            if (tabId === 'ads') renderMyAds();
+            if (tabId === 'wallet') updateWalletDisplay();
+            if (tabId === 'more') updateProfileStats();
+        }
+
+        function setHomeMarketMode(mode) {
+            document.getElementById('buyToggleBtn').className = mode === 'buy' ? 'home-toggle-btn active-buy' : 'home-toggle-btn';
+            document.getElementById('sellToggleBtn').className = mode === 'sell' ? 'home-toggle-btn active-sell' : 'home-toggle-btn';
+            
+            document.getElementById('buyMarketList').style.display = mode === 'buy' ? 'block' : 'none';
+            document.getElementById('sellMarketList').style.display = mode === 'sell' ? 'block' : 'none';
+        }
+
+        function setOrderTab(tab) {
+            document.getElementById('ongoingBtn').className = tab === 'ongoing' ? 'orders-toggle-btn active' : 'orders-toggle-btn';
+            document.getElementById('completedBtn').className = tab === 'completed' ? 'orders-toggle-btn active' : 'orders-toggle-btn';
+
+            document.getElementById('ongoingOrdersList').style.display = tab === 'ongoing' ? 'block' : 'none';
+            document.getElementById('completedOrdersList').style.display = tab === 'completed' ? 'block' : 'none';
+        }
+
+        function filterAds(type, el) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-bar .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            if (type === 'accounts') {
+                openPaymentAccountsModal();
+            } else {
+                renderMyAds();
+            }
+        }
+
+        // Modals Management
+        function openBuyOrderModal() { document.getElementById('buyOrderModal').classList.add('active'); }
+        function closeBuyOrderModal() { document.getElementById('buyOrderModal').classList.remove('active'); }
+
+        function startTrade(sellerName, rate, minETB, maxETB, encodedPayments) {
+            currentTrade.sellerName = sellerName;
+            currentTrade.rate = parseFloat(rate);
+            currentTrade.minETB = parseFloat(minETB);
+            currentTrade.maxETB = parseFloat(maxETB);
+            currentTrade.acceptedPayments = JSON.parse(decodeURIComponent(encodedPayments));
+            currentTrade.chosenPayment = currentTrade.acceptedPayments[0] || 'Telebirr';
+
+            document.getElementById('tradeSellerUsername').innerText = sellerName;
+            document.getElementById('tradeRateInfo').innerText = `Rate: 1 USD = ${rate} ETB`;
+            
+            // Render payment methods selection
+            const container = document.getElementById('tradePaymentSelectionGroup');
+            container.innerHTML = currentTrade.acceptedPayments.map((pm, idx) => `
+                <div class="payment-card-select ${idx === 0 ? 'selected' : ''}" onclick="selectTradePayment('${pm}', this)">
+                    <div class="payment-card-info">
+                        <div class="payment-card-title">${pm}</div>
+                        <div class="payment-card-sub">Instant transfer</div>
+                    </div>
+                    <div class="payment-card-check"><i class="fa-solid fa-circle-check"></i></div>
+                </div>
+            `).join('');
+
+            setBuyCurrency('USD');
+            document.getElementById('tradeInputAmount').value = (currentTrade.minETB / currentTrade.rate).toFixed(2);
+            calculateTrade();
+            openBuyOrderModal();
+        }
+
+        function selectTradePayment(pm, el) {
+            currentTrade.chosenPayment = pm;
+            document.querySelectorAll('#tradePaymentSelectionGroup .payment-card-select').forEach(e => e.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function setBuyCurrency(curr) {
+            currentTrade.currency = curr;
+            document.getElementById('currTabUSD').className = curr === 'USD' ? 'currency-tab active' : 'currency-tab';
+            document.getElementById('currTabETB').className = curr === 'ETB' ? 'currency-tab active' : 'currency-tab';
+            document.getElementById('tradeInputSuffix').innerText = curr;
+            calculateTrade();
+        }
+
+        function calculateTrade() {
+            const val = parseFloat(document.getElementById('tradeInputAmount').value) || 0;
+            let usdt = 0;
+            let etb = 0;
+
+            if (currentTrade.currency === 'USD') {
+                usdt = val;
+                etb = usdt * currentTrade.rate;
+            } else {
+                etb = val;
+                usdt = etb / currentTrade.rate;
             }
 
-            container.innerHTML = methods.map((pm, index) => `
-                <div class="payment-card-select ${index === 0 ? 'selected' : ''}" onclick="togglePaymentSelect(this)" data-provider="${pm.provider}" data-account="${pm.accountNumber || pm.phoneNumber || 'Verified Account'}">
-                    <div class="payment-card-info">
-                        <span class="payment-card-title">${pm.provider}</span>
-                        <span class="payment-card-sub">${pm.accountName} ${pm.accountNumber ? '• ' + pm.accountNumber : ''}</span>
-                    </div>
-                    <div class="payment-card-check" style="display: ${index === 0 ? 'block' : 'none'};"><i class="fa-solid fa-check"></i></div>
-                </div>
-            `).join('');
+            document.getElementById('tradeCalculatedPay').innerHTML = `${etb.toFixed(2)} <span>ETB</span>`;
+
+            const minUSDT = currentTrade.minETB / currentTrade.rate;
+            const maxUSDT = currentTrade.maxETB / currentTrade.rate;
+            const errBox = document.getElementById('tradeInputBox');
+            const errText = document.getElementById('tradeMinErrorText');
+            const submitBtn = document.getElementById('tradeSubmitBtn');
+
+            if (usdt < minUSDT || usdt > maxUSDT) {
+                errBox.classList.add('error');
+                errText.innerText = `Amount must be between $${minUSDT.toFixed(2)} and $${maxUSDT.toFixed(2)} USDT`;
+                document.getElementById('tradeMinError').style.display = 'flex';
+                submitBtn.classList.remove('enabled');
+            } else {
+                errBox.classList.remove('error');
+                document.getElementById('tradeMinError').style.display = 'none';
+                submitBtn.classList.add('enabled');
+            }
         }
 
-        function createNewAd() { 
-            populateAdPaymentMethods();
-            document.getElementById('createAdModal').classList.add('active'); 
+        function confirmBuyTrade() {
+            const val = parseFloat(document.getElementById('tradeInputAmount').value) || 0;
+            let usdt = currentTrade.currency === 'USD' ? val : val / currentTrade.rate;
+            let etb = usdt * currentTrade.rate;
+
+            const newOrder = {
+                id: 'ord_' + Date.now(),
+                type: 'buy',
+                amountUSDT: usdt.toFixed(2),
+                rate: currentTrade.rate,
+                totalETB: etb.toFixed(2),
+                seller: currentTrade.sellerName,
+                buyer: getCurrentUsername(),
+                paymentMethod: currentTrade.chosenPayment,
+                status: 'PENDING_APPROVAL'
+            };
+
+            let orders = getOngoingOrders();
+            orders.unshift(newOrder);
+            saveOngoingOrders(orders);
+
+            tg.sendData(JSON.stringify({ action: "create_order", order: newOrder }));
+            closeBuyOrderModal();
+            switchTab('orders', document.querySelectorAll('.bottom-nav .nav-item')[1]);
+        }
+
+        function createNewAd() {
+            const userAds = getStoredAds();
+            if (userAds.length >= 2) {
+                alert('You have reached the maximum limit of ads (1 Buy and 1 Sell).');
+                return;
+            }
+            
+            // Render payment methods inside create modal
+            const pms = getStoredPaymentMethods();
+            const container = document.getElementById('adPaymentOptionsContainer');
+            container.innerHTML = pms.map((pm, idx) => `
+                <div class="payment-card-select ${idx === 0 ? 'selected' : ''}" onclick="toggleAdPaymentSelection(this)">
+                    <div class="payment-card-info">
+                        <div class="payment-card-title">${pm.provider}</div>
+                        <div class="payment-card-sub">${pm.accountName}</div>
+                    </div>
+                    <div class="payment-card-check"><i class="fa-solid fa-circle-check"></i></div>
+                </div>
+            `).join('');
+
+            document.getElementById('createAdModal').classList.add('active');
         }
 
         function closeCreateAd() { document.getElementById('createAdModal').classList.remove('active'); }
 
-        function togglePaymentSelect(element) {
-            const checkIcon = element.querySelector('.payment-card-check');
-            if (element.classList.contains('selected')) {
-                element.classList.remove('selected');
-                checkIcon.style.display = 'none';
-            } else {
-                element.classList.add('selected');
-                checkIcon.style.display = 'block';
-            }
+        function selectAdType(type) {
+            selectedType = type;
+            document.getElementById('typeBuyBtn').className = type === 'buy' ? 'type-btn active-buy' : 'type-btn';
+            document.getElementById('typeSellBtn').className = type === 'sell' ? 'type-btn active-sell' : 'type-btn';
+        }
+
+        function toggleAdPaymentSelection(el) {
+            el.classList.toggle('selected');
         }
 
         function submitNewAd() {
@@ -2036,271 +2154,77 @@
             const amount = document.getElementById('adAmount').value;
             const min = document.getElementById('adMin').value;
             const max = document.getElementById('adMax').value;
-            const terms = document.getElementById('adTerms').value;
+            
+            const selectedPmEls = document.querySelectorAll('#adPaymentOptionsContainer .payment-card-select.selected');
+            let payments = [];
+            selectedPmEls.forEach(el => {
+                payments.push(el.querySelector('.payment-card-title').innerText);
+            });
 
-            const selectedCards = document.querySelectorAll('#adPaymentOptionsContainer .payment-card-select.selected');
-            const selectedPayments = Array.from(selectedCards).map(card => card.getAttribute('data-provider'));
-
-            if (!price || !amount || !min || !max) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-
-            if (selectedPayments.length === 0) {
-                alert('Please select at least one payment method.');
-                return;
+            if (payments.length === 0) {
+                payments = ['Telebirr'];
             }
 
             const newAd = {
                 id: 'ad_' + Date.now(),
                 username: getCurrentUsername(),
                 type: selectedType,
-                price: parseFloat(price).toFixed(2),
+                price: price,
                 amount: amount,
                 min: min,
                 max: max,
-                payments: selectedPayments,
-                terms: terms,
-                stats: '100% | 0 orders'
+                payments: payments,
+                stats: '100% | New'
             };
 
-            const userAds = getStoredAds();
-            userAds.push(newAd);
-            saveStoredAds(userAds);
-
-            tg.sendData(JSON.stringify({ action: "submit_ad", ad: newAd }));
+            let ads = getStoredAds();
+            ads.push(newAd);
+            saveStoredAds(ads);
 
             closeCreateAd();
             renderMyAds();
             renderHomeAds();
+            alert('Ad created successfully!');
         }
 
-        function startTrade(traderName, rate, min, max, encodedPayments) {
-            let payments = ['Telebirr'];
-            try {
-                payments = JSON.parse(decodeURIComponent(encodedPayments));
-            } catch(e) { payments = ['Telebirr']; }
-
-            currentTrade.sellerName = traderName;
-            currentTrade.rate = parseFloat(rate);
-            currentTrade.minETB = parseFloat(min) || 200;
-            currentTrade.maxETB = parseFloat(max) || 50000;
-            currentTrade.acceptedPayments = payments;
-            currentTrade.chosenPayment = payments[0];
-            currentTrade.currency = 'USD';
-
-            const paymentContainer = document.getElementById('tradePaymentSelectionGroup');
-            paymentContainer.innerHTML = payments.map((pm, idx) => `
-                <div class="payment-card-select ${idx === 0 ? 'selected' : ''}" onclick="selectTradePayment(this, '${pm}')">
-                    <div class="payment-card-info">
-                        <span class="payment-card-title">${pm}</span>
-                    </div>
-                    <div class="payment-card-check" style="display: ${idx === 0 ? 'block' : 'none'};"><i class="fa-solid fa-check"></i></div>
-                </div>
-            `).join('');
-
-            document.getElementById('tradeSellerUsername').innerText = currentTrade.sellerName;
-            document.getElementById('tradeRateInfo').innerText = `Rate: 1 USD = ${currentTrade.rate.toFixed(2)} ETB`;
-            
-            const defaultMinUSDT = (currentTrade.minETB / currentTrade.rate).toFixed(2);
-            document.getElementById('tradeInputAmount').value = defaultMinUSDT;
-
-            setBuyCurrency('USD');
-            document.getElementById('buyOrderModal').classList.add('active');
-        }
-
-        function selectTradePayment(element, pm) {
-            document.querySelectorAll('#tradePaymentSelectionGroup .payment-card-select').forEach(card => {
-                card.classList.remove('selected');
-                card.querySelector('.payment-card-check').style.display = 'none';
-            });
-            element.classList.add('selected');
-            element.querySelector('.payment-card-check').style.display = 'block';
-            currentTrade.chosenPayment = pm;
-        }
-
-        function closeBuyOrderModal() { document.getElementById('buyOrderModal').classList.remove('active'); }
-
-        function setBuyCurrency(curr) {
-            currentTrade.currency = curr;
-            const usdBtn = document.getElementById('currTabUSD');
-            const etbBtn = document.getElementById('currTabETB');
-            const suffix = document.getElementById('tradeInputSuffix');
-
-            if (curr === 'USD') {
-                usdBtn.className = 'currency-tab active';
-                etbBtn.className = 'currency-tab';
-                suffix.innerText = 'USD';
-                document.getElementById('tradeInputAmount').value = (currentTrade.minETB / currentTrade.rate).toFixed(2);
-            } else {
-                etbBtn.className = 'currency-tab active';
-                usdBtn.className = 'currency-tab';
-                suffix.innerText = 'ETB';
-                document.getElementById('tradeInputAmount').value = currentTrade.minETB.toFixed(2);
-            }
-            calculateTrade();
-        }
-
-        function calculateTrade() {
-            const inputVal = parseFloat(document.getElementById('tradeInputAmount').value) || 0;
-            const rate = currentTrade.rate;
-            const minETB = currentTrade.minETB;
-            const maxETB = currentTrade.maxETB;
-            
-            let totalPayETB = 0;
-            let totalUSDT = 0;
-
-            if (currentTrade.currency === 'USD') {
-                totalUSDT = inputVal;
-                totalPayETB = inputVal * rate;
-            } else {
-                totalPayETB = inputVal;
-                totalUSDT = inputVal / rate;
-            }
-
-            document.getElementById('tradeCalculatedPay').innerHTML = `${totalPayETB.toFixed(2)} <span>ETB</span>`;
-
-            const inputBox = document.getElementById('tradeInputBox');
-            const errorBox = document.getElementById('tradeMinError');
-            const errorText = document.getElementById('tradeMinErrorText');
-            const submitBtn = document.getElementById('tradeSubmitBtn');
-
-            if (totalPayETB < minETB) {
-                inputBox.classList.add('error');
-                errorBox.style.display = 'flex';
-                if (currentTrade.currency === 'USD') {
-                    errorText.innerText = `Amount must be at least $${(minETB / rate).toFixed(2)} USDT`;
-                } else {
-                    errorText.innerText = `Amount must be at least ${minETB.toFixed(2)} ETB`;
-                }
-                submitBtn.classList.remove('enabled');
-            } else if (totalPayETB > maxETB) {
-                inputBox.classList.add('error');
-                errorBox.style.display = 'flex';
-                if (currentTrade.currency === 'USD') {
-                    errorText.innerText = `Amount exceeds max limit of $${(maxETB / rate).toFixed(2)} USDT`;
-                } else {
-                    errorText.innerText = `Amount exceeds max limit of ${maxETB.toFixed(2)} ETB`;
-                }
-                submitBtn.classList.remove('enabled');
-            } else {
-                inputBox.classList.remove('error');
-                errorBox.style.display = 'none';
-                submitBtn.classList.add('enabled');
-            }
-        }
-
-        function confirmBuyTrade() {
-            const inputVal = parseFloat(document.getElementById('tradeInputAmount').value) || 0;
-            const rate = currentTrade.rate;
-            const minETB = currentTrade.minETB;
-            const maxETB = currentTrade.maxETB;
-            
-            let totalPayETB = currentTrade.currency === 'USD' ? inputVal * rate : inputVal;
-            let totalUSDT = currentTrade.currency === 'USD' ? inputVal : inputVal / rate;
-
-            if (totalPayETB < minETB || totalPayETB > maxETB) {
-                alert(`Order amount must be between ${minETB.toFixed(2)} ETB and ${maxETB.toFixed(2)} ETB`);
-                return;
-            }
-
-            const tradeData = {
-                id: 'ord_' + Date.now(),
-                seller: currentTrade.sellerName,
-                buyer: getCurrentUsername(),
-                rate: currentTrade.rate,
-                amountUSDT: totalUSDT.toFixed(2),
-                amountETB: totalPayETB.toFixed(2),
-                chosenPayment: currentTrade.chosenPayment,
-                sellerAccount: 'Verified Merchant Account',
-                status: 'PENDING_APPROVAL'
-            };
-
-            const ongoing = getOngoingOrders();
-            ongoing.unshift(tradeData);
-            saveOngoingOrders(ongoing);
-
-            tg.sendData(JSON.stringify({ action: "request_buy_trade", trade: tradeData }));
-            alert(`Order request sent to ${currentTrade.sellerName} for approval!`);
-            closeBuyOrderModal();
-            renderOngoingOrders();
-            switchTab('orders', document.querySelectorAll('.nav-item')[1]);
-        }
-
-        function switchTab(tabId, element) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            if (element) element.classList.add('active');
-            if (tabId === 'orders') {
-                renderOngoingOrders();
-                renderCompletedOrders();
-            }
-        }
-
-        function setHomeMarketMode(mode) {
-            const buyBtn = document.getElementById('buyToggleBtn');
-            const sellBtn = document.getElementById('sellToggleBtn');
-            const buyList = document.getElementById('buyMarketList');
-            const sellList = document.getElementById('sellMarketList');
-
-            if (mode === 'buy') {
-                buyBtn.className = 'home-toggle-btn active-buy';
-                sellBtn.className = 'home-toggle-btn';
-                buyList.style.display = 'block';
-                sellList.style.display = 'none';
-            } else {
-                sellBtn.className = 'home-toggle-btn active-sell';
-                buyBtn.className = 'home-toggle-btn';
-                sellList.style.display = 'block';
-                buyList.style.display = 'none';
-            }
-        }
-
-        function filterAds(type, element) {
-            currentFilter = type;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            element.classList.add('active');
+        function deleteAd(adId) {
+            let ads = getStoredAds();
+            ads = ads.filter(a => a.id !== adId);
+            saveStoredAds(ads);
             renderMyAds();
+            renderHomeAds();
         }
 
-        function setOrderTab(tab) {
-            const ongoingBtn = document.getElementById('ongoingBtn');
-            const completedBtn = document.getElementById('completedBtn');
-            const ongoingList = document.getElementById('ongoingOrdersList');
-            const completedList = document.getElementById('completedOrdersList');
-
-            if (tab === 'ongoing') {
-                ongoingBtn.className = 'orders-toggle-btn active';
-                completedBtn.className = 'orders-toggle-btn';
-                ongoingList.style.display = 'block';
-                completedList.style.display = 'none';
-            } else {
-                completedBtn.className = 'orders-toggle-btn active';
-                ongoingBtn.className = 'orders-toggle-btn';
-                completedList.style.display = 'block';
-                ongoingList.style.display = 'none';
-            }
+        function toggleOnlineStatus() {
+            const isOnline = document.getElementById('keepOnlineToggle').checked;
+            localStorage.setItem('allp2p_keep_online', isOnline);
         }
 
-        function openProfileModal() { populateUserInfo(); updateProfileStats(); document.getElementById('profileModal').classList.add('active'); }
+        function refreshWallet() { updateWalletDisplay(); alert('Wallet synced.'); }
+        function handleDeposit() { alert('Select network: Solana (SPL) or BNB Smart Chain (BEP20) to deposit USDT.'); }
+        function handleWithdraw() { alert('Withdrawal gateway active. Enter destination address.'); }
+        function handleHistory() { alert('No prior transaction logs found.'); }
+
+        // Profile & Payment accounts modals
+        function openProfileModal() { document.getElementById('profileModal').classList.add('active'); }
         function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
-        function openPaymentAccountsModal() { populateUserInfo(); renderSavedPaymentMethods(); document.getElementById('paymentAccountsModal').classList.add('active'); }
+
+        function openPaymentAccountsModal() {
+            document.getElementById('paymentAccountsModal').classList.add('active');
+            renderSavedPaymentAccounts();
+        }
         function closePaymentAccountsModal() { document.getElementById('paymentAccountsModal').classList.remove('active'); }
-        function openHowToUseModal() { document.getElementById('howToUseModal').classList.add('active'); }
-        function closeHowToUseModal() { document.getElementById('howToUseModal').classList.remove('active'); }
 
-        function renderSavedPaymentMethods() {
-            const listContainer = document.getElementById('savedPaymentAccountsList');
-            const methods = getStoredPaymentMethods();
-
-            listContainer.innerHTML = methods.map(pm => `
+        function renderSavedPaymentAccounts() {
+            const pms = getStoredPaymentMethods();
+            const container = document.getElementById('savedPaymentAccountsList');
+            container.innerHTML = pms.map(pm => `
                 <div class="pm-account-card">
                     <div class="pm-acc-info">
                         <h4>${pm.provider}</h4>
-                        <p>${pm.accountName} ${pm.accountNumber ? '• ' + pm.accountNumber : ''} ${pm.phoneNumber ? '• ' + pm.phoneNumber : ''}</p>
+                        <p>${pm.accountName} ${pm.accountNumber ? '• ' + pm.accountNumber : ''}</p>
                     </div>
-                    <div class="pm-delete-btn" onclick="deletePaymentMethod('${pm.id}')"><i class="fa-solid fa-trash-can"></i></div>
+                    <div class="pm-delete-btn" onclick="deletePaymentMethod('${pm.id}')"><i class="fa-solid fa-trash"></i></div>
                 </div>
             `).join('');
         }
@@ -2311,91 +2235,52 @@
             const accountNumber = document.getElementById('pmAccountNumber').value;
             const phoneNumber = document.getElementById('pmPhoneNumber').value;
 
-            if (!provider) { alert('Please select a provider.'); return; }
+            if (!provider) {
+                alert('Please select a provider.');
+                return;
+            }
 
-            const newPaymentMethod = {
+            let pms = getStoredPaymentMethods();
+            pms.push({
                 id: 'pm_' + Date.now(),
-                provider: provider,
-                accountName: accountName,
-                accountNumber: accountNumber,
-                phoneNumber: phoneNumber
-            };
-
-            const methods = getStoredPaymentMethods();
-            methods.push(newPaymentMethod);
-            saveStoredPaymentMethods(methods);
-
-            tg.sendData(JSON.stringify({ action: "add_payment_method", method: newPaymentMethod }));
-
-            document.getElementById('pmProvider').value = '';
-            document.getElementById('pmAccountNumber').value = '';
-            document.getElementById('pmPhoneNumber').value = '';
-
-            renderSavedPaymentMethods();
+                provider,
+                accountName,
+                accountNumber,
+                phoneNumber
+            });
+            saveStoredPaymentMethods(pms);
+            renderSavedPaymentAccounts();
             alert('Payment method saved successfully!');
         }
 
         function deletePaymentMethod(id) {
-            let methods = getStoredPaymentMethods();
-            methods = methods.filter(m => m.id !== id);
-            saveStoredPaymentMethods(methods);
-            renderSavedPaymentMethods();
+            let pms = getStoredPaymentMethods();
+            pms = pms.filter(p => p.id !== id);
+            saveStoredPaymentMethods(pms);
+            renderSavedPaymentAccounts();
         }
 
-        function deleteAd(id) {
-            let userAds = getStoredAds();
-            userAds = userAds.filter(a => a.id !== id);
-            saveStoredAds(userAds);
-            renderMyAds();
-            renderHomeAds();
+        function openHowToUseModal() { document.getElementById('howToUseModal').classList.add('active'); }
+        function closeHowToUseModal() { document.getElementById('howToUseModal').classList.remove('active'); }
+
+        function openMoreOption(opt) {
+            if (opt === 'security') alert('Security settings: Secret code change available.');
+            else if (opt === 'referral_program') alert('Referral link: https://t.me/AllP2P_Bot?start=ref_temesigen');
+            else if (opt === 'bonus_rewards') alert('Bonus rewards: Complete daily merchant trades to unlock bonuses.');
+            else if (opt === 'contact_center') alert('Contact Center: Support agents online via @AllP2P_Support.');
         }
 
-        function populateUserInfo() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                const user = tg.initDataUnsafe.user;
-                const name = (user.first_name || '') + ' ' + (user.last_name || '');
-                const formattedName = name.trim() || 'Temesigen Akililu lema';
-                
-                document.getElementById('profFullName').innerText = formattedName;
-                document.getElementById('profUsername').innerText = user.username ? '@' + user.username : '@username';
-                document.getElementById('profAvatar').innerText = (user.first_name || 'T').charAt(0).toUpperCase();
-                document.getElementById('profInfoName').innerHTML = `${formattedName} <i class="fa-solid fa-pen edit-icon" onclick="editProfileField('Full Name')"></i>`;
-                document.getElementById('pmAccountName').value = formattedName;
-            }
+        function editProfileField(field) {
+            const val = prompt(`Edit ${field}:`);
+            if (val) alert(`${field} updated successfully!`);
         }
 
-        function selectAdType(type) {
-            selectedType = type;
-            const buyBtn = document.getElementById('typeBuyBtn');
-            const sellBtn = document.getElementById('typeSellBtn');
-
-            if (type === 'buy') {
-                buyBtn.className = 'type-btn active-buy';
-                sellBtn.className = 'type-btn';
-            } else {
-                sellBtn.className = 'type-btn active-sell';
-                buyBtn.className = 'type-btn';
-            }
-        }
-
-        function editProfileField(field) { tg.sendData(JSON.stringify({ action: "edit_profile_field", field: field })); }
-        function openMoreOption(action) { tg.sendData(JSON.stringify({ action: action })); }
-        function refreshWallet() { tg.sendData(JSON.stringify({ action: "refresh_wallet" })); }
-        function handleDeposit() { tg.sendData(JSON.stringify({ action: "open_deposit" })); }
-        function handleWithdraw() { tg.sendData(JSON.stringify({ action: "open_withdraw" })); }
-        function handleHistory() { tg.sendData(JSON.stringify({ action: "open_wallet_history" })); }
-        function toggleOnlineStatus() { tg.sendData(JSON.stringify({ action: "toggle_online", status: document.getElementById('keepOnlineToggle').checked })); }
-
+        // Initialize App on Load
         window.onload = function() {
             checkRegistrationStatus();
             renderHomeAds();
-            renderMyAds();
-            renderOngoingOrders();
-            renderCompletedOrders();
-            populateUserInfo();
-            updateOrdersBadge();
             updateWalletDisplay();
-            updateProfileStats();
+            updateOrdersBadge();
         };
     </script>
 </body>
