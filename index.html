@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All P2P - Registration & Status</title>
+    <title>All P2P - Registration, Status & Admin</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -40,7 +40,7 @@
         .step-indicator { font-size: 12px; color: #888; margin-bottom: 20px; float: right; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; }
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #333;
@@ -96,6 +96,14 @@
             background-color: #333;
             color: #fff;
         }
+        button.danger {
+            background-color: #cf304a;
+            color: #fff;
+        }
+        button.success {
+            background-color: #0ecb81;
+            color: #000;
+        }
 
         /* Modal Overlay */
         .modal-overlay {
@@ -140,6 +148,14 @@
             text-align: center;
             margin-bottom: 20px;
         }
+        .status-badge.approved {
+            background: #112a1c;
+            border-color: #0ecb81;
+        }
+        .status-badge.rejected {
+            background: #2a1215;
+            border-color: #cf304a;
+        }
         .info-card {
             background: #242424;
             padding: 15px;
@@ -161,11 +177,30 @@
             margin-bottom: 10px;
             color: #ccc;
         }
+
+        /* Admin Panel Styles */
+        .admin-user-card {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .admin-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
+    <!-- TOGGLE BUTTON FOR ADMIN VIEW TESTING -->
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button onclick="toggleAdminPanel()" style="padding: 6px 12px; font-size: 11px; background: #333; color: #f0b90b; width: auto; border-radius: 4px;">⚙️ Admin Panel Simulation</button>
+    </div>
+
     <!-- STEP 1 OF 2 -->
     <div id="view-step-1" class="view-section active">
         <span class="step-indicator">Step 1 of 2</span>
@@ -181,7 +216,7 @@
             <div class="form-group">
                 <label>Full Name *</label>
                 <input type="text" id="fullName" required placeholder="As it appears on your National ID">
-                <div class="note">Enter your name exactly as it appears on your National ID. This will be locked after verification.</div>
+                <div class="note">Enter your name exactly as it appears on your National ID.</div>
             </div>
 
             <div class="form-group">
@@ -207,7 +242,6 @@
             <div class="form-group">
                 <label>Binance ID *</label>
                 <input type="text" id="binanceId" required placeholder="Enter Binance ID">
-                <div class="note">Required: Must be registered before March 2025.</div>
             </div>
 
             <div class="form-group">
@@ -249,7 +283,6 @@
             <div class="form-group">
                 <label>Secret Code (Password) *</label>
                 <input type="password" id="secretCode" pattern="[0-9]*" inputmode="numeric" required placeholder="Numeric code only">
-                <div class="note">Numeric code only — used for sensitive operations.</div>
             </div>
 
             <div class="form-group">
@@ -264,23 +297,21 @@
         </form>
     </div>
 
-    <!-- STATUS DASHBOARD VIEW (FINAL SECTION) -->
+    <!-- STATUS DASHBOARD VIEW -->
     <div id="view-status" class="view-section">
         <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 32px; margin-bottom: 5px;">⏳</div>
-            <h2>Registration Submitted!</h2>
-            <p style="font-size: 13px; color: #f0b90b;">Your account is under review</p>
+            <div id="statusIcon" style="font-size: 32px; margin-bottom: 5px;">⏳</div>
+            <h2 id="statusMainTitle">Registration Submitted!</h2>
+            <p id="statusSubTitle" style="font-size: 13px; color: #f0b90b;">Your account is under review</p>
         </div>
 
-        <div class="status-badge">
-            <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">🟡 Pending Admin Approval</div>
-            <div style="font-size: 11px; color: #bbb;">Our team is reviewing your registration details and documents. This usually takes a few minutes to a few hours.</div>
+        <div id="statusBadgeContainer" class="status-badge">
+            <div id="statusBadgeTitle" style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">🟡 Pending Admin Approval</div>
+            <div id="statusBadgeDesc" style="font-size: 11px; color: #bbb;">Our team is reviewing your registration details and documents.</div>
         </div>
 
         <div class="info-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-weight: bold; font-size: 14px;">Your Profile</span>
-            </div>
+            <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">Your Profile</div>
             <div class="info-row"><span>Full Name</span><span id="resFullName"></span></div>
             <div class="info-row"><span>Binance ID</span><span id="resBinanceId"></span></div>
             <div class="info-row"><span>Email</span><span id="resEmail"></span></div>
@@ -289,15 +320,21 @@
 
         <div class="info-card">
             <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">What Happens Next?</div>
-            <div class="check-list-item">✅ <div><b>Document Review:</b> Our admin team will verify your identity documents and registration information.</div></div>
-            <div class="check-list-item">✅ <div><b>Account Activation:</b> This page checks automatically. Once approved, you will continue to confirm your secret code and access trading.</div></div>
-            <div class="check-list-item">✅ <div><b>Get Notified:</b> You will receive a Telegram notification when your account is approved.</div></div>
+            <div class="check-list-item">✅ <div><b>Document Review:</b> Admin verifies identity documents.</div></div>
+            <div class="check-list-item">✅ <div><b>Account Activation:</b> Once approved, you can access trading.</div></div>
         </div>
 
-        <div style="text-align: center; font-size: 11px; color: #888; margin-top: 15px;">
-            Checking for approval every 15 seconds
-        </div>
         <button class="secondary" style="width: 100%; margin-top: 10px;" onclick="checkApprovalStatus()">Check Status Now</button>
+    </div>
+
+    <!-- ADMIN PANEL VIEW -->
+    <div id="view-admin" class="view-section">
+        <h2>🛠️ Admin Approval Panel</h2>
+        <p style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Review pending user registration submissions.</p>
+        <div id="adminUserList">
+            <!-- Dynamic Submissions will appear here -->
+        </div>
+        <button class="secondary" style="width: 100%; margin-top: 15px;" onclick="closeAdminPanel()">← Back to Registration</button>
     </div>
 </div>
 
@@ -305,7 +342,7 @@
 <div id="secretModal" class="modal-overlay">
     <div class="modal-card">
         <div class="modal-title">Do you remember your secret code?</div>
-        <div class="modal-desc">You will need this code for withdrawals and releasing funds. Enter it below to confirm you remember it before we submit your registration.</div>
+        <div class="modal-desc">Enter your secret code below to confirm before we submit your registration.</div>
         
         <div class="form-group">
             <label>Enter your secret code</label>
@@ -331,9 +368,16 @@
 
 <script>
     const tg = window.Telegram.WebApp;
-    tg.expand();
+    try { tg.expand(); } catch(e){}
 
     let formData = {};
+
+    // Generate a unique dummy ID for the current browser session
+    let currentUserId = localStorage.getItem('p2p_user_id');
+    if (!currentUserId) {
+        currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('p2p_user_id', currentUserId);
+    }
 
     function goToStep2(e) {
         e.preventDefault();
@@ -375,8 +419,6 @@
             return;
         }
         formData.secretCode = code;
-
-        // Open Secret Confirmation Modal
         document.getElementById('secretModal').style.display = 'flex';
     }
 
@@ -393,42 +435,166 @@
 
         closeSecretModal();
         
-        // Show Loader Modal
         const loader = document.getElementById('loaderModal');
         const percentage = document.getElementById('loaderPercentage');
         const statusText = document.getElementById('loaderStatusText');
         loader.style.display = 'flex';
 
-        // Simulate progress steps
         setTimeout(() => {
-            percentage.innerText = '30%';
-            statusText.innerText = 'Uploading documents...';
-        }, 100);
+            percentage.innerText = '50%';
+            statusText.innerText = 'Encrypting & uploading documents...';
+        }, 1000);
 
         setTimeout(() => {
-            percentage.innerText = '90%';
-            statusText.innerText = 'Almost done...';
-        }, 1500);
+            percentage.innerText = '100%';
+            statusText.innerText = 'Finalizing...';
+        }, 2200);
 
         setTimeout(() => {
             loader.style.display = 'none';
-            alert('Registration Successful! Your account is under review. You will be notified once approved.');
-            
-            // Populate Status Dashboard fields
-            document.getElementById('resFullName').innerText = formData.fullName;
-            document.getElementById('resBinanceId').innerText = formData.binanceId;
-            document.getElementById('resEmail').innerText = formData.email;
-            document.getElementById('resPhone').innerText = formData.phoneNumber;
 
-            // Switch to Status View (Final Section)
+            // Save submission record to localStorage database simulation
+            const registrationRecord = {
+                id: currentUserId,
+                ...formData,
+                status: 'pending', // pending, approved, rejected
+                date: new Date().toLocaleString()
+            };
+
+            let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+            allRegistrations[currentUserId] = registrationRecord;
+            localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+
+            // Populate Status Dashboard fields
+            updateDashboardDisplay(registrationRecord);
+
+            // Switch to Status View
             document.getElementById('view-step-2').classList.remove('active');
             document.getElementById('view-status').classList.add('active');
             window.scrollTo(0, 0);
-        }, 2800);
+        }, 3000);
+    }
+
+    function updateDashboardDisplay(record) {
+        document.getElementById('resFullName').innerText = record.fullName;
+        document.getElementById('resBinanceId').innerText = record.binanceId;
+        document.getElementById('resEmail').innerText = record.email;
+        document.getElementById('resPhone').innerText = record.phoneNumber;
+
+        const badge = document.getElementById('statusBadgeContainer');
+        const icon = document.getElementById('statusIcon');
+        const mainTitle = document.getElementById('statusMainTitle');
+        const subTitle = document.getElementById('statusSubTitle');
+        const badgeTitle = document.getElementById('statusBadgeTitle');
+        const badgeDesc = document.getElementById('statusBadgeDesc');
+
+        badge.className = 'status-badge ' + record.status;
+
+        if (record.status === 'approved') {
+            icon.innerText = '✅';
+            mainTitle.innerText = 'Account Approved!';
+            subTitle.innerText = 'You are ready to trade';
+            badgeTitle.innerText = '🟢 Verification Successful';
+            badgeDesc.innerText = 'Your identity documents have been approved by the admin team.';
+        } else if (record.status === 'rejected') {
+            icon.innerText = '❌';
+            mainTitle.innerText = 'Registration Rejected';
+            subTitle.innerText = 'Action required';
+            badgeTitle.innerText = '🔴 Approval Denied';
+            badgeDesc.innerText = 'Your documents did not meet requirements. Please contact support or restart registration.';
+        } else {
+            icon.innerText = '⏳';
+            mainTitle.innerText = 'Registration Submitted!';
+            subTitle.innerText = 'Your account is under review';
+            badgeTitle.innerText = '🟡 Pending Admin Approval';
+            badgeDesc.innerText = 'Our team is reviewing your registration details and documents.';
+        }
     }
 
     function checkApprovalStatus() {
-        alert('Account status: Pending review. We will notify you via Telegram once approved.');
+        let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+        let record = allRegistrations[currentUserId];
+        
+        if (!record) {
+            alert('No active registration found.');
+            return;
+        }
+
+        updateDashboardDisplay(record);
+
+        if (record.status === 'approved') {
+            alert('Great news! Your account has been approved.');
+        } else if (record.status === 'rejected') {
+            alert('Your registration request was rejected by admin.');
+        } else {
+            alert('Status update: Still pending admin review.');
+        }
+    }
+
+    // --- ADMIN PANEL FUNCTIONS ---
+    function toggleAdminPanel() {
+        const adminView = document.getElementById('view-admin');
+        const isVisible = adminView.classList.contains('active');
+
+        // Hide all views first
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+
+        if (!isVisible) {
+            renderAdminUserList();
+            adminView.classList.add('active');
+        } else {
+            // Default back to status or step 1
+            let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+            if (allRegistrations[currentUserId]) {
+                document.getElementById('view-status').classList.add('active');
+            } else {
+                document.getElementById('view-step-1').classList.add('active');
+            }
+        }
+        window.scrollTo(0, 0);
+    }
+
+    function closeAdminPanel() {
+        toggleAdminPanel();
+    }
+
+    function renderAdminUserList() {
+        const container = document.getElementById('adminUserList');
+        let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+        let keys = Object.keys(allRegistrations);
+
+        if (keys.length === 0) {
+            container.innerHTML = `<p style="font-size: 13px; color: #888; text-align: center;">No user registrations found yet.</p>`;
+            return;
+        }
+
+        let html = '';
+        keys.forEach(key => {
+            let user = allRegistrations[key];
+            html += `
+                <div class="admin-user-card">
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 4px;">${user.fullName} (${user.nickname})</div>
+                    <div style="font-size: 12px; color: #aaa;">Binance ID: ${user.binanceId}</div>
+                    <div style="font-size: 12px; color: #aaa;">Phone: ${user.phoneNumber}</div>
+                    <div style="font-size: 11px; color: #f0b90b; margin-top: 4px;">Status: <b>${user.status.toUpperCase()}</b></div>
+                    <div class="admin-actions">
+                        <button class="success" onclick="adminSetStatus('${user.id}', 'approved')">Approve</button>
+                        <button class="danger" onclick="adminSetStatus('${user.id}', 'rejected')">Reject</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function adminSetStatus(userId, newStatus) {
+        let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+        if (allRegistrations[userId]) {
+            allRegistrations[userId].status = newStatus;
+            localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+            alert(`User status successfully updated to: ${newStatus.toUpperCase()}`);
+            renderAdminUserList();
+        }
     }
 </script>
 
