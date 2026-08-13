@@ -179,6 +179,26 @@
         }
 
         /* Admin Panel Styles */
+        .admin-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .admin-tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: #222;
+            color: #888;
+            border: 1px solid #333;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .admin-tab-btn.active {
+            background: #333;
+            color: #f0b90b;
+            border-color: #f0b90b;
+        }
         .admin-user-card {
             background: #1a1a1a;
             border: 1px solid #444;
@@ -321,7 +341,14 @@
     <!-- ADMIN PANEL VIEW -->
     <div id="view-admin" class="view-section">
         <h2>🛠️ Admin Approval Panel</h2>
-        <p style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Review pending user registration submissions.</p>
+        <p style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Manage pending and approved user registrations.</p>
+        
+        <!-- Admin Tabs -->
+        <div class="admin-tabs">
+            <button class="admin-tab-btn active" id="tabPendingBtn" onclick="switchAdminTab('pending')">Pending List</button>
+            <button class="admin-tab-btn" id="tabApprovedBtn" onclick="switchAdminTab('approved')">Approved List</button>
+        </div>
+
         <div id="adminUserList"></div>
         <button class="secondary" style="width: 100%; margin-top: 15px;" onclick="closeAdminPanel()">← Back</button>
     </div>
@@ -359,10 +386,8 @@
     const tg = window.Telegram.WebApp;
     try { tg.expand(); } catch(e){}
 
-    // Admin Telegram ID configured
     const MY_ADMIN_TELEGRAM_ID = 8216936710;
 
-    // Check if the current user is the admin
     const telegramUser = tg.initDataUnsafe?.user;
     const currentUserId = telegramUser ? telegramUser.id : (localStorage.getItem('p2p_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
     
@@ -370,12 +395,22 @@
         localStorage.setItem('p2p_user_id', currentUserId);
     }
 
-    // Reveal admin button only if the logged-in Telegram user matches your ID
     if (telegramUser && telegramUser.id === MY_ADMIN_TELEGRAM_ID) {
         document.getElementById('adminButtonWrapper').style.display = 'block';
     }
 
     let formData = {};
+    let currentAdminTab = 'pending'; // 'pending' or 'approved'
+
+    // Check saved registration on load and route properly
+    window.addEventListener('DOMContentLoaded', () => {
+        let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+        if (allRegistrations[currentUserId]) {
+            updateDashboardDisplay(allRegistrations[currentUserId]);
+            document.getElementById('view-step-1').classList.remove('active');
+            document.getElementById('view-status').classList.add('active');
+        }
+    });
 
     function goToStep2(e) {
         e.preventDefault();
@@ -475,16 +510,22 @@
 
         if (record.status === 'approved') {
             icon.innerText = '✅';
-            mainTitle.innerText = 'Account Approved!';
-            subTitle.innerText = 'You are ready to trade';
+            mainTitle.innerText = 'You are successfully registered!';
+            subTitle.innerText = 'Your account is verified and active';
             badgeTitle.innerText = '🟢 Verification Successful';
-            badgeDesc.innerText = 'Your identity documents have been approved.';
+            badgeDesc.innerText = 'Your identity documents have been approved. You can now use all P2P features.';
         } else if (record.status === 'rejected') {
             icon.innerText = '❌';
             mainTitle.innerText = 'Registration Rejected';
             subTitle.innerText = 'Action required';
             badgeTitle.innerText = '🔴 Approval Denied';
             badgeDesc.innerText = 'Your registration documents did not meet requirements.';
+        } else {
+            icon.innerText = '⏳';
+            mainTitle.innerText = 'Registration Submitted!';
+            subTitle.innerText = 'Your account is under review';
+            badgeTitle.innerText = '🟡 Pending Admin Approval';
+            badgeDesc.innerText = 'Our team is reviewing your registration details and documents.';
         }
     }
 
@@ -498,7 +539,13 @@
         }
 
         updateDashboardDisplay(record);
-        alert(`Account status: ${record.status.toUpperCase()}`);
+        if (record.status === 'approved') {
+            alert('Great news! You are successfully registered and approved.');
+        } else if (record.status === 'rejected') {
+            alert('Your registration request was rejected by admin.');
+        } else {
+            alert('Status update: Still pending admin review.');
+        }
     }
 
     function toggleAdminPanel() {
@@ -525,18 +572,35 @@
         toggleAdminPanel();
     }
 
+    function switchAdminTab(tabName) {
+        currentAdminTab = tabName;
+        document.getElementById('tabPendingBtn').className = 'admin-tab-btn ' + (tabName === 'pending' ? 'active' : '');
+        document.getElementById('tabApprovedBtn').className = 'admin-tab-btn ' + (tabName === 'approved' ? 'active' : '');
+        renderAdminUserList();
+    }
+
     function renderAdminUserList() {
         const container = document.getElementById('adminUserList');
         let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
         let keys = Object.keys(allRegistrations);
 
-        if (keys.length === 0) {
-            container.innerHTML = `<p style="font-size: 13px; color: #888; text-align: center;">No user registrations found yet.</p>`;
+        // Filter keys based on current tab
+        let filteredKeys = keys.filter(key => {
+            let user = allRegistrations[key];
+            if (currentAdminTab === 'pending') {
+                return user.status === 'pending' || user.status === 'rejected';
+            } else {
+                return user.status === 'approved';
+            }
+        });
+
+        if (filteredKeys.length === 0) {
+            container.innerHTML = `<p style="font-size: 13px; color: #888; text-align: center; padding: 20px;">No ${currentAdminTab} users found.</p>`;
             return;
         }
 
         let html = '';
-        keys.forEach(key => {
+        filteredKeys.forEach(key => {
             let user = allRegistrations[key];
             html += `
                 <div class="admin-user-card">
@@ -545,8 +609,8 @@
                     <div style="font-size: 12px; color: #aaa;">Phone: ${user.phoneNumber}</div>
                     <div style="font-size: 11px; color: #f0b90b; margin-top: 4px;">Status: <b>${user.status.toUpperCase()}</b></div>
                     <div class="admin-actions">
-                        <button class="success" onclick="adminSetStatus('${user.id}', 'approved')">Approve</button>
-                        <button class="danger" onclick="adminSetStatus('${user.id}', 'rejected')">Reject</button>
+                        ${user.status !== 'approved' ? `<button class="success" onclick="adminSetStatus('${user.id}', 'approved')">Approve</button>` : ''}
+                        ${user.status !== 'rejected' ? `<button class="danger" onclick="adminSetStatus('${user.id}', 'rejected')">Reject</button>` : ''}
                     </div>
                 </div>
             `;
