@@ -514,9 +514,9 @@
             badgeTitle.innerText = '🟢 Verification Successful';
             badgeDesc.innerText = 'Your identity documents have been approved. You can now use all P2P features.';
             
-            // Automatically redirect to the subfolder index.html after a brief delay
+            // Automatically redirect to the updated subfolder path after a brief delay
             setTimeout(() => {
-                window.location.href = './subfolder/index.html';
+                window.location.href = './P2p/abiy/index.html';
             }, 1500);
 
         } else if (record.status === 'rejected') {
@@ -546,7 +546,7 @@
         updateDashboardDisplay(record);
         if (record.status === 'approved') {
             alert('Great news! You are successfully registered and approved. Redirecting...');
-            window.location.href = './subfolder/index.html';
+            window.location.href = './P2p/abiy/index.html';
         } else if (record.status === 'rejected') {
             alert('Your registration request was rejected by admin.');
         } else {
