@@ -479,11 +479,8 @@
             allRegistrations[currentUserId] = registrationRecord;
             localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
 
-            updateDashboardDisplay(registrationRecord);
-
-            document.getElementById('view-step-2').classList.remove('active');
-            document.getElementById('view-status').classList.add('active');
-            window.scrollTo(0, 0);
+            // Automatically redirect to your live deployment link upon completion
+            window.location.href = 'https://dinka12345.github.io/p2p-app/';
         }, 2000);
     }
 
