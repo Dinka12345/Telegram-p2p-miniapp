@@ -387,8 +387,9 @@
         localStorage.setItem('p2p_user_id', currentUserId);
     }
 
-    // Show the admin button automatically if the current user is admin ID 8216936710
     const isAuthorizedAdmin = telegramUser && Number(telegramUser.id) === MY_ADMIN_TELEGRAM_ID;
+
+    // Prevent Admin from registering - Open Admin Panel directly instead
     if (isAuthorizedAdmin) {
         document.getElementById('adminButtonWrapper').style.display = 'block';
     }
@@ -397,6 +398,14 @@
     let currentAdminTab = 'pending';
 
     window.addEventListener('DOMContentLoaded', () => {
+        if (isAuthorizedAdmin) {
+            // Directly show the admin panel view and hide registration/status forms for admin
+            document.getElementById('view-step-1').classList.remove('active');
+            document.getElementById('view-admin').classList.add('active');
+            renderAdminUserList();
+            return;
+        }
+
         let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
         if (allRegistrations[currentUserId]) {
             updateDashboardDisplay(allRegistrations[currentUserId]);
@@ -407,6 +416,10 @@
 
     function goToStep2(e) {
         e.preventDefault();
+        if (isAuthorizedAdmin) {
+            alert('Admin accounts cannot register. Please use the Admin Panel to manage users.');
+            return;
+        }
         formData.nickname = document.getElementById('nickname').value;
         formData.fullName = document.getElementById('fullName').value;
         formData.email = document.getElementById('email').value;
@@ -437,6 +450,7 @@
 
     function promptSecretConfirmation(e) {
         e.preventDefault();
+        if (isAuthorizedAdmin) return;
         const code = document.getElementById('secretCode').value;
         const confirmCode = document.getElementById('confirmCode').value;
 
@@ -453,6 +467,7 @@
     }
 
     function submitRegistrationProcess() {
+        if (isAuthorizedAdmin) return;
         const modalInput = document.getElementById('modalSecretInput').value;
         if (modalInput !== formData.secretCode) {
             alert('Incorrect secret code entered!');
@@ -477,12 +492,6 @@
             let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
             allRegistrations[currentUserId] = registrationRecord;
             localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
-
-            // Automatically open admin panel if the registrant is the admin itself, 
-            // ensuring admin registrations instantly populate for approval review.
-            if (isAuthorizedAdmin) {
-                alert('Registration submitted. Since you are Admin (ID: 8216936710), you can now approve it directly from the Admin Panel.');
-            }
 
             updateDashboardDisplay(registrationRecord);
 
@@ -514,7 +523,6 @@
             badgeTitle.innerText = '🟢 Verification Successful';
             badgeDesc.innerText = 'Your identity documents have been approved. You can now use all P2P features.';
             
-            // Automatically redirect to the updated subfolder path after a brief delay
             setTimeout(() => {
                 window.location.href = './P2p/abiy/index.html';
             }, 1500);
@@ -555,7 +563,7 @@
     }
 
     function toggleAdminPanel() {
-        if (!telegramUser || Number(telegramUser.id) !== MY_ADMIN_TELEGRAM_ID) {
+        if (!isAuthorizedAdmin) {
             alert('Access Denied: You are not authorized to view the admin panel.');
             return;
         }
@@ -569,17 +577,16 @@
             renderAdminUserList();
             adminView.classList.add('active');
         } else {
-            let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
-            if (allRegistrations[currentUserId]) {
-                document.getElementById('view-status').classList.add('active');
-            } else {
-                document.getElementById('view-step-1').classList.add('active');
-            }
+            // Return admin to the admin panel view instead of standard registration
+            adminView.classList.add('active');
         }
         window.scrollTo(0, 0);
     }
 
     function closeAdminPanel() {
+        if (isAuthorizedAdmin) {
+            return; // Admins stay within the admin panel context
+        }
         toggleAdminPanel();
     }
 
@@ -629,7 +636,7 @@
     }
 
     function adminSetStatus(userId, newStatus) {
-        if (!telegramUser || Number(telegramUser.id) !== MY_ADMIN_TELEGRAM_ID) {
+        if (!isAuthorizedAdmin) {
             alert('Security Alert: Unauthorized modification attempt blocked!');
             return;
         }
