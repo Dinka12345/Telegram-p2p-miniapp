@@ -378,8 +378,7 @@
     const tg = window.Telegram.WebApp;
     try { tg.expand(); } catch(e){}
 
-    // REPLACE THE NUMBER BELOW WITH YOUR NEW TELEGRAM ADMIN ID
-    const MY_ADMIN_TELEGRAM_ID = 1234567890;
+    const MY_ADMIN_TELEGRAM_ID = 8216936710;
 
     const telegramUser = tg.initDataUnsafe?.user;
     const currentUserId = telegramUser ? telegramUser.id : (localStorage.getItem('p2p_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
@@ -388,6 +387,7 @@
         localStorage.setItem('p2p_user_id', currentUserId);
     }
 
+    // Show the admin button automatically if the current user is admin ID 8216936710
     const isAuthorizedAdmin = telegramUser && Number(telegramUser.id) === MY_ADMIN_TELEGRAM_ID;
     if (isAuthorizedAdmin) {
         document.getElementById('adminButtonWrapper').style.display = 'block';
@@ -477,6 +477,12 @@
             let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
             allRegistrations[currentUserId] = registrationRecord;
             localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+
+            // Automatically open admin panel if the registrant is the admin itself, 
+            // ensuring admin registrations instantly populate for approval review.
+            if (isAuthorizedAdmin) {
+                alert('Registration submitted. Since you are Admin (ID: 8216936710), you can now approve it directly from the Admin Panel.');
+            }
 
             updateDashboardDisplay(registrationRecord);
 
