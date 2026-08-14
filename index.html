@@ -513,6 +513,12 @@
             subTitle.innerText = 'Your account is verified and active';
             badgeTitle.innerText = '🟢 Verification Successful';
             badgeDesc.innerText = 'Your identity documents have been approved. You can now use all P2P features.';
+            
+            // Automatically redirect to the subfolder index.html after a brief delay
+            setTimeout(() => {
+                window.location.href = './subfolder/index.html';
+            }, 1500);
+
         } else if (record.status === 'rejected') {
             icon.innerText = '❌';
             mainTitle.innerText = 'Registration Rejected';
@@ -539,7 +545,8 @@
 
         updateDashboardDisplay(record);
         if (record.status === 'approved') {
-            alert('Great news! You are successfully registered and approved.');
+            alert('Great news! You are successfully registered and approved. Redirecting...');
+            window.location.href = './subfolder/index.html';
         } else if (record.status === 'rejected') {
             alert('Your registration request was rejected by admin.');
         } else {
