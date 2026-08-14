@@ -208,7 +208,7 @@
 <body>
 
 <div class="wrapper">
-    <!-- ADMIN BUTTON (Strictly for ID 8216936710) -->
+    <!-- ADMIN BUTTON -->
     <div id="adminButtonWrapper" style="text-align: right; margin-bottom: 10px; display: none;">
         <button onclick="toggleAdminPanel()" style="padding: 6px 12px; font-size: 11px; background: #333; color: #f0b90b; width: auto; border-radius: 4px;">⚙️ Admin Panel</button>
     </div>
@@ -378,7 +378,8 @@
     const tg = window.Telegram.WebApp;
     try { tg.expand(); } catch(e){}
 
-    const MY_ADMIN_TELEGRAM_ID = 8216936710;
+    // REPLACE THE NUMBER BELOW WITH YOUR NEW TELEGRAM ADMIN ID
+    const MY_ADMIN_TELEGRAM_ID = 1234567890;
 
     const telegramUser = tg.initDataUnsafe?.user;
     const currentUserId = telegramUser ? telegramUser.id : (localStorage.getItem('p2p_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
@@ -387,7 +388,6 @@
         localStorage.setItem('p2p_user_id', currentUserId);
     }
 
-    // Safely verify and display admin panel access only for your specific Telegram ID
     const isAuthorizedAdmin = telegramUser && Number(telegramUser.id) === MY_ADMIN_TELEGRAM_ID;
     if (isAuthorizedAdmin) {
         document.getElementById('adminButtonWrapper').style.display = 'block';
@@ -542,7 +542,6 @@
     }
 
     function toggleAdminPanel() {
-        // Enforce absolute security restriction before opening interface
         if (!telegramUser || Number(telegramUser.id) !== MY_ADMIN_TELEGRAM_ID) {
             alert('Access Denied: You are not authorized to view the admin panel.');
             return;
@@ -617,7 +616,6 @@
     }
 
     function adminSetStatus(userId, newStatus) {
-        // Strict Backend-Equivalent Security Gate: Validate Admin ID on every action click
         if (!telegramUser || Number(telegramUser.id) !== MY_ADMIN_TELEGRAM_ID) {
             alert('Security Alert: Unauthorized modification attempt blocked!');
             return;
