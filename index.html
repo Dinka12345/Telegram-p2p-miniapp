@@ -341,7 +341,7 @@
     
     // --- CLOUD DATABASE CONFIG (JSONBin.io) ---
     const JSONBIN_BIN_ID = "6a8056333919920ec48571af"; 
-    const JSONBIN_KEY = "YOUR_MASTER_KEY_HERE"; // Replace with your jsonbin.io Master Key
+    const JSONBIN_KEY = "$2a$10$vOuliBok2Cu9EuYWYIglj.HG9cj2hopX7LSMpYVZaX.ydl6vJt7Q2";
 
     const telegramUser = tg.initDataUnsafe?.user;
     const currentUserId = telegramUser ? telegramUser.id : (localStorage.getItem('p2p_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
@@ -377,7 +377,6 @@
     });
 
     async function fetchCloudData() {
-        if (JSONBIN_BIN_ID === "YOUR_BIN_ID_HERE") return {};
         try {
             let res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
                 headers: { 'X-Master-Key': JSONBIN_KEY }
@@ -392,7 +391,6 @@
 
     async function saveCloudData(allRegistrations) {
         localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
-        if (JSONBIN_BIN_ID === "YOUR_BIN_ID_HERE") return;
         try {
             await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
                 method: 'PUT',
