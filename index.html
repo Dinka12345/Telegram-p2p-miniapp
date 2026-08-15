@@ -423,6 +423,39 @@
         document.getElementById('secretModal').style.display = 'none';
     }
 
+    function sendRegistrationToTelegramAdmin(record) {
+        const BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN_HERE"; // Replace with your actual Bot Token from @BotFather
+        const ADMIN_CHAT_ID = MY_ADMIN_TELEGRAM_ID;
+
+        const message = `🔔 *New P2P Registration Received!*\n\n` +
+                        `*Name:* ${record.fullName} (${record.nickname})\n` +
+                        `*Binance ID:* ${record.binanceId}\n` +
+                        `*Phone:* ${record.phoneNumber}\n` +
+                        `*Email:* ${record.email}\n` +
+                        `*Date:* ${record.date}`;
+
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: ADMIN_CHAT_ID,
+                text: message,
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: "✅ Approve", callback_data: `approve_${record.id}` },
+                            { text: "❌ Reject", callback_data: `reject_${record.id}` }
+                        ]
+                    ]
+                }
+            })
+        })
+        .then(response => response.json())
+        .then(data => console.log('Admin notified via Telegram:', data))
+        .catch(error => console.error('Failed to notify admin:', error));
+    }
+
     function submitRegistrationProcess() {
         if (isAuthorizedAdmin) return;
         const modalInput = document.getElementById('modalSecretInput').value;
@@ -448,6 +481,9 @@
             let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
             allRegistrations[currentUserId] = registrationRecord;
             localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+
+            // Send direct push notification to Admin via Telegram Bot API (Option 1)
+            sendRegistrationToTelegramAdmin(registrationRecord);
 
             try {
                 if (tg && tg.sendData) {
