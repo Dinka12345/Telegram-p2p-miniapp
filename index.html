@@ -284,7 +284,10 @@
             <div class="info-row"><span>Phone</span><span id="resPhone"></span></div>
         </div>
 
-        <button class="secondary" style="width: 100%; margin-top: 10px;" onclick="checkApprovalStatus()">Check Status Now</button>
+        <div class="btn-container" style="margin-top: 10px;">
+            <button class="secondary" onclick="checkApprovalStatus()">Check Status Now</button>
+            <button class="danger" onclick="resetMyRegistration()">Register Again</button>
+        </div>
     </div>
 
     <!-- ADMIN PANEL VIEW -->
@@ -442,12 +445,10 @@
                 date: new Date().toLocaleString()
             };
 
-            // Save globally accessible profile queue for Admin review
             let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
             allRegistrations[currentUserId] = registrationRecord;
             localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
 
-            // Transmit data to Telegram Bot back-end if webapp is integrated via Bot API
             try {
                 if (tg && tg.sendData) {
                     tg.sendData(JSON.stringify({
@@ -528,6 +529,18 @@
             alert('Your registration request was rejected by admin.');
         } else {
             alert('Status update: Still pending admin review.');
+        }
+    }
+
+    function resetMyRegistration() {
+        if (confirm('Are you sure you want to forget your previous registration and register as a new user?')) {
+            let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+            delete allRegistrations[currentUserId];
+            localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+
+            document.getElementById('view-status').classList.remove('active');
+            document.getElementById('view-step-1').classList.add('active');
+            window.scrollTo(0, 0);
         }
     }
 
