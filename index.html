@@ -49,8 +49,6 @@
             color: #fff;
             box-sizing: border-box;
         }
-        .note { font-size: 11px; color: #b8860b; margin-top: 4px; }
-        
         .upload-box {
             border: 2px dashed #f0b90b;
             border-radius: 8px;
@@ -75,7 +73,6 @@
             color: #0ecb81;
             display: none;
         }
-
         .btn-container {
             display: flex;
             gap: 10px;
@@ -92,20 +89,10 @@
             font-weight: bold;
             cursor: pointer;
         }
-        button.secondary {
-            background-color: #333;
-            color: #fff;
-        }
-        button.danger {
-            background-color: #cf304a;
-            color: #fff;
-        }
-        button.success {
-            background-color: #0ecb81;
-            color: #000;
-        }
+        button.secondary { background-color: #333; color: #fff; }
+        button.danger { background-color: #cf304a; color: #fff; }
+        button.success { background-color: #0ecb81; color: #000; }
 
-        /* Modal Overlay */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -128,7 +115,6 @@
         .modal-title { color: #f0b90b; font-size: 16px; font-weight: bold; margin-bottom: 10px; }
         .modal-desc { font-size: 13px; color: #ccc; margin-bottom: 15px; line-height: 1.4; }
 
-        /* Loader Overlay */
         .spinner-circle {
             width: 70px; height: 70px;
             border: 5px solid #333;
@@ -139,7 +125,6 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Status Dashboard Styles */
         .status-badge {
             background: #2a2512;
             border: 1px solid #b8860b;
@@ -148,14 +133,9 @@
             text-align: center;
             margin-bottom: 20px;
         }
-        .status-badge.approved {
-            background: #112a1c;
-            border-color: #0ecb81;
-        }
-        .status-badge.rejected {
-            background: #2a1215;
-            border-color: #cf304a;
-        }
+        .status-badge.approved { background: #112a1c; border-color: #0ecb81; }
+        .status-badge.rejected { background: #2a1215; border-color: #cf304a; }
+        
         .info-card {
             background: #242424;
             padding: 15px;
@@ -170,39 +150,16 @@
         }
         .info-row span:first-child { color: #aaa; }
 
-        /* Admin Panel Styles */
-        .admin-tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 15px;
-        }
+        .admin-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
         .admin-tab-btn {
-            flex: 1;
-            padding: 10px;
-            background: #222;
-            color: #888;
-            border: 1px solid #333;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
+            flex: 1; padding: 10px; background: #222; color: #888;
+            border: 1px solid #333; border-radius: 6px; font-size: 13px; cursor: pointer;
         }
-        .admin-tab-btn.active {
-            background: #333;
-            color: #f0b90b;
-            border-color: #f0b90b;
-        }
+        .admin-tab-btn.active { background: #333; color: #f0b90b; border-color: #f0b90b; }
         .admin-user-card {
-            background: #1a1a1a;
-            border: 1px solid #444;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 12px;
+            background: #1a1a1a; border: 1px solid #444; padding: 12px; border-radius: 8px; margin-bottom: 12px;
         }
-        .admin-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
+        .admin-actions { display: flex; gap: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -335,7 +292,6 @@
         <h2>🛠️ Admin Approval Panel</h2>
         <p style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Manage pending and approved user registrations.</p>
         
-        <!-- Admin Tabs -->
         <div class="admin-tabs">
             <button class="admin-tab-btn active" id="tabPendingBtn" onclick="switchAdminTab('pending')">Pending List</button>
             <button class="admin-tab-btn" id="tabApprovedBtn" onclick="switchAdminTab('approved')">Approved List</button>
@@ -389,7 +345,6 @@
 
     const isAuthorizedAdmin = telegramUser && Number(telegramUser.id) === MY_ADMIN_TELEGRAM_ID;
 
-    // Prevent Admin from registering - Open Admin Panel directly instead
     if (isAuthorizedAdmin) {
         document.getElementById('adminButtonWrapper').style.display = 'block';
     }
@@ -399,7 +354,6 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         if (isAuthorizedAdmin) {
-            // Directly show the admin panel view and hide registration/status forms for admin
             document.getElementById('view-step-1').classList.remove('active');
             document.getElementById('view-admin').classList.add('active');
             renderAdminUserList();
@@ -475,7 +429,6 @@
         }
 
         closeSecretModal();
-        
         const loader = document.getElementById('loaderModal');
         loader.style.display = 'flex';
 
@@ -489,9 +442,25 @@
                 date: new Date().toLocaleString()
             };
 
+            // Save globally accessible profile queue for Admin review
             let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
             allRegistrations[currentUserId] = registrationRecord;
             localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+
+            // Transmit data to Telegram Bot back-end if webapp is integrated via Bot API
+            try {
+                if (tg && tg.sendData) {
+                    tg.sendData(JSON.stringify({
+                        action: 'new_registration',
+                        user_id: currentUserId,
+                        full_name: registrationRecord.fullName,
+                        binance_id: registrationRecord.binanceId,
+                        phone: registrationRecord.phoneNumber
+                    }));
+                }
+            } catch(err) {
+                console.log('Telegram sendData fallback error:', err);
+            }
 
             updateDashboardDisplay(registrationRecord);
 
@@ -577,16 +546,13 @@
             renderAdminUserList();
             adminView.classList.add('active');
         } else {
-            // Return admin to the admin panel view instead of standard registration
             adminView.classList.add('active');
         }
         window.scrollTo(0, 0);
     }
 
     function closeAdminPanel() {
-        if (isAuthorizedAdmin) {
-            return; // Admins stay within the admin panel context
-        }
+        if (isAuthorizedAdmin) return;
         toggleAdminPanel();
     }
 
