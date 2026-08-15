@@ -300,7 +300,7 @@
             <button class="admin-tab-btn" id="tabApprovedBtn" onclick="switchAdminTab('approved')">Approved List</button>
         </div>
 
-        <div id="adminUserList"></div>
+        <div id="adminUserList">Loading data from cloud...</div>
         <button class="secondary" style="width: 100%; margin-top: 15px;" onclick="closeAdminPanel()">← Back</button>
     </div>
 </div>
@@ -338,6 +338,10 @@
     try { tg.expand(); } catch(e){}
 
     const MY_ADMIN_TELEGRAM_ID = 8216936710;
+    
+    // --- CLOUD DATABASE CONFIG (JSONBin.io) ---
+    const JSONBIN_BIN_ID = "6a8056333919920ec48571af"; 
+    const JSONBIN_KEY = "YOUR_MASTER_KEY_HERE"; // Replace with your jsonbin.io Master Key
 
     const telegramUser = tg.initDataUnsafe?.user;
     const currentUserId = telegramUser ? telegramUser.id : (localStorage.getItem('p2p_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
@@ -355,10 +359,11 @@
     let formData = {};
     let currentAdminTab = 'pending';
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
         if (isAuthorizedAdmin) {
             document.getElementById('view-step-1').classList.remove('active');
             document.getElementById('view-admin').classList.add('active');
+            await loadRegistrationsFromCloud();
             renderAdminUserList();
             return;
         }
@@ -370,6 +375,42 @@
             document.getElementById('view-status').classList.add('active');
         }
     });
+
+    async function fetchCloudData() {
+        if (JSONBIN_BIN_ID === "YOUR_BIN_ID_HERE") return {};
+        try {
+            let res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                headers: { 'X-Master-Key': JSONBIN_KEY }
+            });
+            let data = await res.json();
+            return data.record || {};
+        } catch (e) {
+            console.error("Failed to fetch cloud data", e);
+            return JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+        }
+    }
+
+    async function saveCloudData(allRegistrations) {
+        localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+        if (JSONBIN_BIN_ID === "YOUR_BIN_ID_HERE") return;
+        try {
+            await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_KEY
+                },
+                body: JSON.stringify(allRegistrations)
+            });
+        } catch (e) {
+            console.error("Failed to save cloud data", e);
+        }
+    }
+
+    async function loadRegistrationsFromCloud() {
+        let cloudData = await fetchCloudData();
+        localStorage.setItem('p2p_registrations', JSON.stringify(cloudData));
+    }
 
     function goToStep2(e) {
         e.preventDefault();
@@ -423,40 +464,7 @@
         document.getElementById('secretModal').style.display = 'none';
     }
 
-    function sendRegistrationToTelegramAdmin(record) {
-        const BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN_HERE"; // Replace with your actual Bot Token from @BotFather
-        const ADMIN_CHAT_ID = MY_ADMIN_TELEGRAM_ID;
-
-        const message = `🔔 *New P2P Registration Received!*\n\n` +
-                        `*Name:* ${record.fullName} (${record.nickname})\n` +
-                        `*Binance ID:* ${record.binanceId}\n` +
-                        `*Phone:* ${record.phoneNumber}\n` +
-                        `*Email:* ${record.email}\n` +
-                        `*Date:* ${record.date}`;
-
-        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: ADMIN_CHAT_ID,
-                text: message,
-                parse_mode: 'Markdown',
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: "✅ Approve", callback_data: `approve_${record.id}` },
-                            { text: "❌ Reject", callback_data: `reject_${record.id}` }
-                        ]
-                    ]
-                }
-            })
-        })
-        .then(response => response.json())
-        .then(data => console.log('Admin notified via Telegram:', data))
-        .catch(error => console.error('Failed to notify admin:', error));
-    }
-
-    function submitRegistrationProcess() {
+    async function submitRegistrationProcess() {
         if (isAuthorizedAdmin) return;
         const modalInput = document.getElementById('modalSecretInput').value;
         if (modalInput !== formData.secretCode) {
@@ -468,43 +476,23 @@
         const loader = document.getElementById('loaderModal');
         loader.style.display = 'flex';
 
-        setTimeout(() => {
-            loader.style.display = 'none';
+        const registrationRecord = {
+            id: currentUserId,
+            ...formData,
+            status: 'pending',
+            date: new Date().toLocaleString()
+        };
 
-            const registrationRecord = {
-                id: currentUserId,
-                ...formData,
-                status: 'pending',
-                date: new Date().toLocaleString()
-            };
+        let allRegistrations = await fetchCloudData();
+        allRegistrations[currentUserId] = registrationRecord;
+        await saveCloudData(allRegistrations);
 
-            let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
-            allRegistrations[currentUserId] = registrationRecord;
-            localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+        loader.style.display = 'none';
+        updateDashboardDisplay(registrationRecord);
 
-            // Send direct push notification to Admin via Telegram Bot API (Option 1)
-            sendRegistrationToTelegramAdmin(registrationRecord);
-
-            try {
-                if (tg && tg.sendData) {
-                    tg.sendData(JSON.stringify({
-                        action: 'new_registration',
-                        user_id: currentUserId,
-                        full_name: registrationRecord.fullName,
-                        binance_id: registrationRecord.binanceId,
-                        phone: registrationRecord.phoneNumber
-                    }));
-                }
-            } catch(err) {
-                console.log('Telegram sendData fallback error:', err);
-            }
-
-            updateDashboardDisplay(registrationRecord);
-
-            document.getElementById('view-step-2').classList.remove('active');
-            document.getElementById('view-status').classList.add('active');
-            window.scrollTo(0, 0);
-        }, 2000);
+        document.getElementById('view-step-2').classList.remove('active');
+        document.getElementById('view-status').classList.add('active');
+        window.scrollTo(0, 0);
     }
 
     function updateDashboardDisplay(record) {
@@ -548,8 +536,8 @@
         }
     }
 
-    function checkApprovalStatus() {
-        let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+    async function checkApprovalStatus() {
+        let allRegistrations = await fetchCloudData();
         let record = allRegistrations[currentUserId];
         
         if (!record) {
@@ -568,11 +556,11 @@
         }
     }
 
-    function resetMyRegistration() {
+    async function resetMyRegistration() {
         if (confirm('Are you sure you want to forget your previous registration and register as a new user?')) {
-            let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+            let allRegistrations = await fetchCloudData();
             delete allRegistrations[currentUserId];
-            localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+            await saveCloudData(allRegistrations);
 
             document.getElementById('view-status').classList.remove('active');
             document.getElementById('view-step-1').classList.add('active');
@@ -580,7 +568,7 @@
         }
     }
 
-    function toggleAdminPanel() {
+    async function toggleAdminPanel() {
         if (!isAuthorizedAdmin) {
             alert('Access Denied: You are not authorized to view the admin panel.');
             return;
@@ -592,6 +580,7 @@
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
 
         if (!isVisible) {
+            await loadRegistrationsFromCloud();
             renderAdminUserList();
             adminView.classList.add('active');
         } else {
@@ -650,16 +639,16 @@
         container.innerHTML = html;
     }
 
-    function adminSetStatus(userId, newStatus) {
+    async function adminSetStatus(userId, newStatus) {
         if (!isAuthorizedAdmin) {
             alert('Security Alert: Unauthorized modification attempt blocked!');
             return;
         }
 
-        let allRegistrations = JSON.parse(localStorage.getItem('p2p_registrations') || '{}');
+        let allRegistrations = await fetchCloudData();
         if (allRegistrations[userId]) {
             allRegistrations[userId].status = newStatus;
-            localStorage.setItem('p2p_registrations', JSON.stringify(allRegistrations));
+            await saveCloudData(allRegistrations);
             alert(`User status updated to: ${newStatus.toUpperCase()}`);
             renderAdminUserList();
         }
