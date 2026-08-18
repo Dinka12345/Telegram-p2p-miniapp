@@ -1022,7 +1022,7 @@
 
             <div class="total-balance-card">
                 <div class="balance-label">Total Balance</div>
-                <div class="total-amount" id="totalBalance">$500.00</div>
+                <div class="total-amount" id="totalBalance">$0.00</div>
                 <div class="currency-sub">USDT</div>
             </div>
 
@@ -1032,7 +1032,7 @@
                         <i class="fa-regular fa-circle-down" style="color:var(--accent-green)"></i>
                         <span>Available</span>
                     </div>
-                    <div class="subcard-amount green" id="availBalance">$500.00</div>
+                    <div class="subcard-amount green" id="availBalance">$0.00</div>
                     <div class="currency-sub">USDT</div>
                 </div>
                 <div class="balance-subcard">
@@ -1058,20 +1058,6 @@
                     <i class="fa-solid fa-rotate-left"></i>
                     <span>History</span>
                 </button>
-            </div>
-
-            <div class="bonus-card">
-                <div class="bonus-header">
-                    <div class="bonus-icon"><i class="fa-solid fa-gift"></i></div>
-                    <div class="bonus-title">
-                        <h3>Trade Bonus Wallet</h3>
-                        <p>Merchant: 0.75 / 0.75 ETB per USDT (T1/T2)</p>
-                    </div>
-                </div>
-                <div class="bonus-balance">
-                    <span class="balance-label">Available Balance</span>
-                    <span class="bonus-val" id="bonusBalance">0.00 ETB</span>
-                </div>
             </div>
         </div>
     </div>
@@ -1216,14 +1202,6 @@
                     <div class="menu-text">
                         <div class="menu-title">Payment Accounts</div>
                         <div class="menu-sub">Manage your payment methods</div>
-                    </div>
-                </div>
-
-                <div class="menu-item" onclick="openMoreOption('bonus_rewards')">
-                    <div class="menu-icon-bg yellow-icon"><i class="fa-solid fa-ribbon"></i></div>
-                    <div class="menu-text">
-                        <div class="menu-title">Bonus and Rewards</div>
-                        <div class="menu-sub">Earn points and win prizes</div>
                     </div>
                 </div>
 
@@ -1536,7 +1514,7 @@
 
         function getWalletBalance() {
             const bal = localStorage.getItem('allp2p_wallet_balance');
-            return bal !== null ? parseFloat(bal) : 500.00;
+            return bal !== null ? parseFloat(bal) : 0.00;
         }
 
         function saveWalletBalance(amount) {
@@ -2257,8 +2235,6 @@
         function openMoreOption(option) {
             if (option === 'security') {
                 alert('Security settings: Manage your secret code and 2FA here.');
-            } else if (option === 'bonus_rewards') {
-                alert('Bonus and Rewards: Complete merchant challenges to earn rewards.');
             } else if (option === 'referral_program') {
                 alert('Referral Program: Share your link to invite friends.');
             } else if (option === 'contact_center') {
