@@ -1513,21 +1513,21 @@
         function saveCompletedOrders(orders) { localStorage.setItem('allp2p_completed_orders', JSON.stringify(orders)); }
 
         function getWalletBalance() {
-            const bal = localStorage.getItem('allp2p_wallet_balance');
-            return bal !== null ? parseFloat(bal) : 0.00;
+            return 0.00;
         }
 
         function saveWalletBalance(amount) {
-            localStorage.setItem('allp2p_wallet_balance', amount.toFixed(2));
+            localStorage.setItem('allp2p_wallet_balance', "0.00");
             updateWalletDisplay();
         }
 
         function updateWalletDisplay() {
-            const bal = getWalletBalance();
             const totalEl = document.getElementById('totalBalance');
             const availEl = document.getElementById('availBalance');
-            if (totalEl) totalEl.innerText = `$${bal.toFixed(2)}`;
-            if (availEl) availEl.innerText = `$${bal.toFixed(2)}`;
+            const escrowEl = document.getElementById('escrowBalance');
+            if (totalEl) totalEl.innerText = `$0.00`;
+            if (availEl) availEl.innerText = `$0.00`;
+            if (escrowEl) escrowEl.innerText = `$0.00`;
         }
 
         function updateOrdersBadge() {
@@ -1646,18 +1646,6 @@
                     const order = orders[idx];
                     const amountUSDT = parseFloat(order.amountUSDT);
                     const me = getCurrentUsername();
-
-                    if (order.seller === me) {
-                        let currentBal = getWalletBalance();
-                        if (currentBal < amountUSDT) {
-                            alert('Insufficient wallet balance to release assets!');
-                            return;
-                        }
-                        saveWalletBalance(currentBal - amountUSDT);
-                    } else if (order.buyer === me) {
-                        let currentBal = getWalletBalance();
-                        saveWalletBalance(currentBal + amountUSDT);
-                    }
 
                     order.status = 'COMPLETED';
                     orders.splice(idx, 1);
