@@ -894,7 +894,7 @@
         </div>
 
         <div class="trade-modal-section">
-            <div class="trade-modal-title">Buy USDT</div>
+            <div class="trade-modal-title" id="tradeModalTitleText">Buy USDT</div>
             
             <div class="currency-toggle-group">
                 <button id="currTabUSD" class="currency-tab active" onclick="setBuyCurrency('USD')">USD</button>
@@ -914,7 +914,7 @@
             </div>
 
             <div class="pay-summary-box">
-                <div class="pay-summary-label">You will pay</div>
+                <div class="pay-summary-label" id="tradeSummaryLabel">You will pay</div>
                 <div class="pay-summary-amount" id="tradeCalculatedPay">3384.00 <span>ETB</span></div>
             </div>
 
@@ -923,7 +923,7 @@
             <button id="tradeSubmitBtn" class="btn-confirm-trade" onclick="confirmBuyTrade()">Buy USDT</button>
 
             <ul class="trade-bullets">
-                <li>Request will be sent to <span id="tradeSellerUsername" style="color:#fff; font-weight:bold;">Azuz</span> for approval/rejection</li>
+                <li id="tradeBulletCounterpart">Request will be sent to <span id="tradeSellerUsername" style="color:#fff; font-weight:bold;">Azuz</span> for approval/rejection</li>
                 <li>They have 5 minutes to respond</li>
                 <li>You'll be notified once accepted</li>
             </ul>
@@ -1472,7 +1472,8 @@
             maxETB: 50000,
             acceptedPayments: ['Telebirr', 'CBE Birr', 'Awash Bank'],
             chosenPayment: 'Telebirr',
-            currency: 'USD'
+            currency: 'USD',
+            isSellAd: false
         };
 
         const defaultBuyAds = [
@@ -1569,8 +1570,14 @@
             const buyContainer = document.getElementById('buyMarketList');
             const sellContainer = document.getElementById('sellMarketList');
 
-            const allBuy = [...defaultBuyAds, ...userAds.filter(a => a.type === 'buy')];
-            const allSell = [...defaultSellAds, ...userAds.filter(a => a.type === 'sell')];
+            // CROSS-POST LOGIC:
+            // User creates a "buy" ad -> posted in the "sell" section on Home
+            // User creates a "sell" ad -> posted in the "buy" section on Home
+            const userBuyAdsForSellSection = userAds.filter(a => a.type === 'buy');
+            const userSellAdsForBuySection = userAds.filter(a => a.type === 'sell');
+
+            const allBuy = [...defaultBuyAds, ...userSellAdsForBuySection];
+            const allSell = [...defaultSellAds, ...userBuyAdsForSellSection];
 
             buyContainer.innerHTML = allBuy.map(ad => createAdCardHTML(ad, false)).join('');
             sellContainer.innerHTML = allSell.map(ad => createAdCardHTML(ad, false)).join('');
@@ -1596,6 +1603,7 @@
 
         function createAdCardHTML(ad, isMyAd) {
             const isBuy = ad.type === 'buy';
+            // In My Ads, display exact type colors. On Home, since cross-posted, let's keep button action styling consistent with card type.
             const btnBg = isBuy ? 'buy-bg' : 'sell-bg';
             const btnText = isBuy ? 'Buy' : 'Sell';
             const username = ad.username || getCurrentUsername();
@@ -1617,7 +1625,7 @@
                         </div>
                         ${isMyAd ? 
                             `<button class="action-btn sell-bg" onclick="deleteAd('${ad.id}')">Delete</button>` : 
-                            `<button class="action-btn ${btnBg}" onclick="startTrade('${username}', '${ad.price}', '${ad.min || 200}', '${ad.max || 50000}', '${pmParam}')">${btnText}</button>`
+                            `<button class="action-btn ${btnBg}" onclick="startTrade('${username}', '${ad.price}', '${ad.min || 200}', '${ad.max || 50000}', '${pmParam}', ${isBuy})">${btnText}</button>`
                         }
                     </div>
                     <div class="card-details">
@@ -1698,17 +1706,17 @@
             container.innerHTML = orders.map(ord => {
                 const isSeller = ord.seller === me;
                 const isPending = ord.status === 'PENDING_APPROVAL';
-                const isApproved = ord.status === 'APPROVED';
+                const isAPPROVED = ord.status === 'APPROVED';
                 const isPaid = ord.status === 'PAID';
                 
                 let displayStatus = ord.status.replace('_', ' ');
-                if (isSeller && isApproved) {
+                if (isSeller && isAPPROVED) {
                     displayStatus = 'Payment Pending';
                 } else if (isPaid) {
                     displayStatus = 'PAID - RELEASE ASSET';
                 }
                 
-                const statusClass = isApproved ? 'approved' : (isPaid ? 'paid' : (ord.status === 'REJECTED' ? 'rejected' : ''));
+                const statusClass = isAPPROVED ? 'approved' : (isPaid ? 'paid' : (ord.status === 'REJECTED' ? 'rejected' : ''));
 
                 return `
                 <div class="order-card-item">
@@ -1737,7 +1745,7 @@
                         </div>
                     </div>
 
-                    ${isApproved && !isSeller ? `
+                    ${isAPPROVED && !isSeller ? `
                         <button class="btn-pay-action" id="pay-btn-${ord.id}" style="display: block;" onclick="markOrderAsPaid('${ord.id}')">I Have Paid</button>
                     ` : ''}
 
@@ -1897,7 +1905,7 @@
             renderHomeAds();
         }
 
-        function startTrade(traderName, rate, min, max, encodedPayments) {
+        function startTrade(traderName, rate, min, max, encodedPayments, isBuyAd) {
             let payments = ['Telebirr'];
             try {
                 payments = JSON.parse(decodeURIComponent(encodedPayments));
@@ -1910,6 +1918,7 @@
             currentTrade.acceptedPayments = payments;
             currentTrade.chosenPayment = payments[0];
             currentTrade.currency = 'USD';
+            currentTrade.isSellAd = !isBuyAd; // If the ad is buy, clicking it means user is selling to it, and vice versa
 
             const paymentContainer = document.getElementById('tradePaymentSelectionGroup');
             paymentContainer.innerHTML = payments.map((pm, idx) => `
@@ -1924,6 +1933,28 @@
             document.getElementById('tradeSellerUsername').innerText = currentTrade.sellerName;
             document.getElementById('tradeRateInfo').innerText = `Rate: 1 USD = ${currentTrade.rate.toFixed(2)} ETB`;
             
+            // Adjust modal text based on whether user is buying or selling
+            const modalTitle = document.getElementById('tradeModalTitleText');
+            const summaryLabel = document.getElementById('tradeSummaryLabel');
+            const submitBtn = document.getElementById('tradeSubmitBtn');
+            const bulletCounterpart = document.getElementById('tradeBulletCounterpart');
+
+            if (currentTrade.isSellAd) {
+                modalTitle.innerText = 'Sell USDT';
+                summaryLabel.innerText = 'You will receive';
+                submitBtn.innerText = 'Sell USDT';
+                submitBtn.style.backgroundColor = 'var(--accent-red)';
+                submitBtn.style.color = '#fff';
+                bulletCounterpart.innerHTML = `Request will be sent to <span id="tradeSellerUsername" style="color:#fff; font-weight:bold;">${currentTrade.sellerName}</span> for approval/rejection`;
+            } else {
+                modalTitle.innerText = 'Buy USDT';
+                summaryLabel.innerText = 'You will pay';
+                submitBtn.innerText = 'Buy USDT';
+                submitBtn.style.backgroundColor = '';
+                submitBtn.style.color = '';
+                bulletCounterpart.innerHTML = `Request will be sent to <span id="tradeSellerUsername" style="color:#fff; font-weight:bold;">${currentTrade.sellerName}</span> for approval/rejection`;
+            }
+
             const defaultMinUSDT = (currentTrade.minETB / currentTrade.rate).toFixed(2);
             document.getElementById('tradeInputAmount').value = defaultMinUSDT;
 
