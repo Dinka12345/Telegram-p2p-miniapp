@@ -1506,74 +1506,6 @@
             { id: 'def3', username: 'Azuz', type: 'sell', price: '188.00', min: '3690.44', max: '50000.00', payments: ['Telebirr', 'CBE Birr', 'Awash Bank'], stats: '98% | 42 orders' }
         ];
 
-        async function completeOrder(orderId) {
-            // 1. Fetch the order details
-            const order = await getOrder(orderId);
-            const amount = order.amount;
-            const buyerId = order.buyerId;
-            const sellerId = order.sellerId;
-        
-            // 2. Execute the transfer within a single database transaction
-            await database.transaction(async (trx) => {
-                
-                // DEDUCT from Seller's wallet
-                await trx('wallets')
-                    .where({ userId: sellerId })
-                    .decrement('balance', amount);
-        
-                // ADD to Buyer's wallet (This is where the fix happens)
-                await trx('wallets')
-                    .where({ userId: buyerId })
-                    .increment('balance', amount); // <-- Ensure this is an addition, not a subtraction
-        
-                // 3. Mark the order as completed
-                await trx('orders')
-                    .where({ id: orderId })
-                    .update({ status: 'COMPLETED' });
-            });
-        }
-
-        async function transferFunds(amount, sellerId, buyerId, pool) {
-          const client = await pool.connect();
-
-          try {
-            // 1. Start Transaction
-            await client.query('BEGIN');
-
-            // 2. Deduct from Seller ONLY
-            const deductResult = await client.query(
-              'UPDATE accounts SET balance = balance - $1 WHERE user_id = $2 AND balance >= $1 RETURNING balance',
-              [amount, sellerId]
-            );
-            
-            if (deductResult.rowCount === 0) {
-              throw new Error('Insufficient funds or invalid seller account.');
-            }
-
-            // 3. Add to Buyer ONLY
-            const addResult = await client.query(
-              'UPDATE accounts SET balance = balance + $1 WHERE user_id = $2 RETURNING balance',
-              [amount, buyerId]
-            );
-
-            if (addResult.rowCount === 0) {
-              throw new Error('Invalid buyer account.');
-            }
-
-            // 4. Commit Transaction if both succeed
-            await client.query('COMMIT');
-            return { success: true, message: 'Transfer completed successfully.' };
-
-          } catch (error) {
-            // Rollback changes if anything goes wrong
-            await client.query('ROLLBACK');
-            console.error('Transfer failed, rolled back:', error.message);
-            return { success: false, error: error.message };
-          } finally {
-            client.release();
-          }
-        }
-
         function getCurrentUsername() {
             return (tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.first_name : 'Temesigen';
         }
@@ -2302,54 +2234,43 @@
             }
         }
 
-        function editProfileField(field) { tg.sendData(JSON.stringify({ action: "edit_profile_field", field: field })); }
-        function openMoreOption(action) { tg.sendData(JSON.stringify({ action: action })); }
-        function refreshWallet() { tg.sendData(JSON.stringify({ action: "refresh_wallet" })); }
-        
-        function handleDeposit() { 
-            document.getElementById('depositModal').classList.add('active');
-            tg.sendData(JSON.stringify({ action: "open_deposit" })); 
-        }
-        function closeDepositModal() {
-            document.getElementById('depositModal').classList.remove('active');
-        }
+        function handleDeposit() { document.getElementById('depositModal').classList.add('active'); }
+        function closeDepositModal() { document.getElementById('depositModal').classList.remove('active'); }
         function selectDepositNetwork(network) {
-            tg.sendData(JSON.stringify({ action: "select_deposit_network", network: network }));
-            alert(`Selected network: ${network}`);
+            alert(`Selected deposit network: ${network}. Generating deposit address...`);
             closeDepositModal();
         }
-        function refreshDeposit() {
-            tg.sendData(JSON.stringify({ action: "refresh_deposit" }));
-        }
 
-        function handleWithdraw() { 
-            document.getElementById('withdrawModal').classList.add('active');
-            tg.sendData(JSON.stringify({ action: "open_withdraw" })); 
-        }
-        function closeWithdrawModal() {
-            document.getElementById('withdrawModal').classList.remove('active');
-        }
+        function handleWithdraw() { document.getElementById('withdrawModal').classList.add('active'); }
+        function closeWithdrawModal() { document.getElementById('withdrawModal').classList.remove('active'); }
         function selectWithdrawNetwork(network) {
-            tg.sendData(JSON.stringify({ action: "select_withdraw_network", network: network }));
-            alert(`Selected network for withdrawal: ${network}`);
+            alert(`Selected withdrawal network: ${network}. Please enter destination address.`);
             closeWithdrawModal();
         }
-        function refreshWithdraw() {
-            tg.sendData(JSON.stringify({ action: "refresh_withdraw" }));
-        }
 
-        function handleHistory() { tg.sendData(JSON.stringify({ action: "open_wallet_history" })); }
-        function toggleOnlineStatus() { tg.sendData(JSON.stringify({ action: "toggle_online", status: document.getElementById('keepOnlineToggle').checked })); }
+        function handleHistory() { alert('Loading transaction history...'); }
+        function refreshWallet() { alert('Wallet balance refreshed.'); }
+        function refreshDeposit() { alert('Refreshing deposit channels...'); }
+        function refreshWithdraw() { alert('Refreshing withdrawal channels...'); }
+        function toggleOnlineStatus() { const isOnline = document.getElementById('keepOnlineToggle').checked; console.log('Online status:', isOnline); }
+
+        function openMoreOption(option) {
+            if (option === 'security') {
+                alert('Security settings: Manage your secret code and 2FA here.');
+            } else if (option === 'bonus_rewards') {
+                alert('Bonus and Rewards: Complete merchant challenges to earn rewards.');
+            } else if (option === 'referral_program') {
+                alert('Referral Program: Share your link to invite friends.');
+            } else if (option === 'contact_center') {
+                alert('Contact Center: Reach out to support@allp2p.com');
+            }
+        }
 
         window.onload = function() {
             renderHomeAds();
             renderMyAds();
-            renderOngoingOrders();
-            renderCompletedOrders();
-            populateUserInfo();
-            updateOrdersBadge();
             updateWalletDisplay();
-            updateProfileStats();
+            updateOrdersBadge();
         };
     </script>
 </body>
