@@ -1135,6 +1135,65 @@
         </div>
     </div>
 
+    <!-- WITHDRAW NETWORK SELECTION MODAL -->
+    <div id="withdrawModal" class="modal-overlay" style="background-color: var(--bg-main);">
+        <div class="header" style="padding: 16px 0; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="back-nav" style="margin-bottom: 0;" onclick="closeWithdrawModal()">
+                    <i class="fa-solid fa-arrow-left" style="font-size: 18px; color: #fff;"></i>
+                </div>
+                <div>
+                    <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #fff;">Withdraw</h1>
+                    <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">Choose a network to withdraw</p>
+                </div>
+            </div>
+            <button class="refresh-btn" style="width: 32px; height: 32px; font-size: 12px;" onclick="refreshWithdraw()"><i class="fa-solid fa-rotate-right"></i></button>
+        </div>
+
+        <div style="margin-top: 12px; background-color: var(--bg-card); border-radius: 16px; padding: 20px;">
+            <h2 style="font-size: 18px; font-weight: bold; color: #fff; margin: 0 0 8px 0;">Select Network</h2>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0 0 20px 0;">
+                Choose the network to send your USDT. Please ensure your receiving wallet supports the selected network.
+            </p>
+
+            <!-- Solana Network Card -->
+            <div onclick="selectWithdrawNetwork('Solana (SPL)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.2s;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background-color: rgba(251, 215, 67, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-yellow); font-weight: bold; font-size: 12px;">SOL</div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: bold; color: #fff;">Solana <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(SPL)</span></div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">USDT on Solana</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 13px;"></i>
+                </div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--accent-yellow); line-height: 1.4;">
+                    <i class="fa-solid fa-triangle-exclamation" style="margin-top: 1px;"></i>
+                    <span>Withdrawals via Solana (SPL) network.</span>
+                </div>
+            </div>
+
+            <!-- BSC Network Card -->
+            <div onclick="selectWithdrawNetwork('BSC (BEP20)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 0.2s;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background-color: rgba(251, 215, 67, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-yellow); font-weight: bold; font-size: 11px;">BSC</div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: bold; color: #fff;">BSC <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(BEP20)</span></div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">USDT on BSC</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 13px;"></i>
+                </div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--accent-yellow); line-height: 1.4;">
+                    <i class="fa-solid fa-triangle-exclamation" style="margin-top: 1px;"></i>
+                    <span>Withdrawals via BNB Smart Chain (BEP20) network.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MORE VIEW -->
     <div id="more" class="view">
         <div class="more-container">
@@ -2263,7 +2322,22 @@
             tg.sendData(JSON.stringify({ action: "refresh_deposit" }));
         }
 
-        function handleWithdraw() { tg.sendData(JSON.stringify({ action: "open_withdraw" })); }
+        function handleWithdraw() { 
+            document.getElementById('withdrawModal').classList.add('active');
+            tg.sendData(JSON.stringify({ action: "open_withdraw" })); 
+        }
+        function closeWithdrawModal() {
+            document.getElementById('withdrawModal').classList.remove('active');
+        }
+        function selectWithdrawNetwork(network) {
+            tg.sendData(JSON.stringify({ action: "select_withdraw_network", network: network }));
+            alert(`Selected network for withdrawal: ${network}`);
+            closeWithdrawModal();
+        }
+        function refreshWithdraw() {
+            tg.sendData(JSON.stringify({ action: "refresh_withdraw" }));
+        }
+
         function handleHistory() { tg.sendData(JSON.stringify({ action: "open_wallet_history" })); }
         function toggleOnlineStatus() { tg.sendData(JSON.stringify({ action: "toggle_online", status: document.getElementById('keepOnlineToggle').checked })); }
 
