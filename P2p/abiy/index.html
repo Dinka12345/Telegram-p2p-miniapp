@@ -799,13 +799,13 @@
         </div>
 
         <div class="toggle-container">
-            <button id="buyToggleBtn" class="home-toggle-btn active-buy" onclick="setHomeMarketMode('buy')">Buy</button>
-            <button id="sellToggleBtn" class="home-toggle-btn" onclick="setHomeMarketMode('sell')">Sell</button>
+            <button id="buyToggleBtn" class="home-toggle-btn" onclick="setHomeMarketMode('buy')">Buy</button>
+            <button id="sellToggleBtn" class="home-toggle-btn active-sell" onclick="setHomeMarketMode('sell')">Sell</button>
         </div>
 
         <div class="order-list">
-            <div id="buyMarketList"></div>
-            <div id="sellMarketList" style="display: none;"></div>
+            <div id="buyMarketList" style="display: none;"></div>
+            <div id="sellMarketList"></div>
         </div>
     </div>
 
@@ -2257,16 +2257,12 @@
             } else if (option === 'referral_program') {
                 alert('Referral Program: Share your link to invite friends.');
             } else if (option === 'contact_center') {
-                alert('Contact Center: Reach out to support@allp2p.com');
+                alert('Contact Center: Reach out to support');
             }
         }
 
-        window.onload = function() {
-            renderHomeAds();
-            renderMyAds();
-            updateWalletDisplay();
-            updateOrdersBadge();
-        };
+        renderHomeAds();
+        renderMyAds();
     </script>
 </body>
 </html>
