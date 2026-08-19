@@ -60,7 +60,6 @@
         .nav-item.active { color: var(--accent-yellow); }
         .nav-item i { font-size: 18px; }
 
-        /* Notification Badge Styling */
         .nav-icon-container {
             position: relative;
             display: inline-block;
@@ -1083,7 +1082,6 @@
                 Choose the network to receive your USDT. Both networks share the same USDT balance.
             </p>
 
-            <!-- Solana Network Card -->
             <div onclick="selectDepositNetwork('Solana (SPL)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.2s;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -1101,7 +1099,6 @@
                 </div>
             </div>
 
-            <!-- BSC Network Card -->
             <div onclick="selectDepositNetwork('BSC (BEP20)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 0.2s;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -1142,7 +1139,6 @@
                 Choose the network to send your USDT. Please ensure your receiving wallet supports the selected network.
             </p>
 
-            <!-- Solana Network Card -->
             <div onclick="selectWithdrawNetwork('Solana (SPL)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.2s;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -1160,7 +1156,6 @@
                 </div>
             </div>
 
-            <!-- BSC Network Card -->
             <div onclick="selectWithdrawNetwork('BSC (BEP20)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 0.2s;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -1514,21 +1509,26 @@
         function saveCompletedOrders(orders) { localStorage.setItem('allp2p_completed_orders', JSON.stringify(orders)); }
 
         function getWalletBalance() {
-            return 0.00;
+            const walletData = JSON.parse(localStorage.getItem('allp2p_wallet') || '{"available": 0.00, "escrow": 0.00}');
+            return walletData;
         }
 
-        function saveWalletBalance(amount) {
-            localStorage.setItem('allp2p_wallet_balance', "0.00");
+        function saveWalletBalance(walletData) {
+            localStorage.setItem('allp2p_wallet', JSON.stringify(walletData));
             updateWalletDisplay();
         }
 
         function updateWalletDisplay() {
+            const wallet = getWalletBalance();
+            const total = wallet.available + wallet.escrow;
+            
             const totalEl = document.getElementById('totalBalance');
             const availEl = document.getElementById('availBalance');
             const escrowEl = document.getElementById('escrowBalance');
-            if (totalEl) totalEl.innerText = `$0.00`;
-            if (availEl) availEl.innerText = `$0.00`;
-            if (escrowEl) escrowEl.innerText = `$0.00`;
+            
+            if (totalEl) totalEl.innerText = `$${total.toFixed(2)}`;
+            if (availEl) availEl.innerText = `$${wallet.available.toFixed(2)}`;
+            if (escrowEl) escrowEl.innerText = `$${wallet.escrow.toFixed(2)}`;
         }
 
         function updateOrdersBadge() {
@@ -1570,9 +1570,6 @@
             const buyContainer = document.getElementById('buyMarketList');
             const sellContainer = document.getElementById('sellMarketList');
 
-            // CROSS-POST LOGIC:
-            // User creates a "buy" ad -> posted in the "sell" section on Home
-            // User creates a "sell" ad -> posted in the "buy" section on Home
             const userBuyAdsForSellSection = userAds.filter(a => a.type === 'buy');
             const userSellAdsForBuySection = userAds.filter(a => a.type === 'sell');
 
@@ -1603,7 +1600,6 @@
 
         function createAdCardHTML(ad, isMyAd) {
             const isBuy = ad.type === 'buy';
-            // In My Ads, display exact type colors. On Home, since cross-posted, let's keep button action styling consistent with card type.
             const btnBg = isBuy ? 'buy-bg' : 'sell-bg';
             const btnText = isBuy ? 'Buy' : 'Sell';
             const username = ad.username || getCurrentUsername();
@@ -1653,7 +1649,6 @@
                 } else if (action === 'release') {
                     const order = orders[idx];
                     const amountUSDT = parseFloat(order.amountUSDT);
-                    const me = getCurrentUsername();
 
                     order.status = 'COMPLETED';
                     orders.splice(idx, 1);
@@ -1918,7 +1913,7 @@
             currentTrade.acceptedPayments = payments;
             currentTrade.chosenPayment = payments[0];
             currentTrade.currency = 'USD';
-            currentTrade.isSellAd = !isBuyAd; // If the ad is buy, clicking it means user is selling to it, and vice versa
+            currentTrade.isSellAd = !isBuyAd;
 
             const paymentContainer = document.getElementById('tradePaymentSelectionGroup');
             paymentContainer.innerHTML = payments.map((pm, idx) => `
@@ -1933,7 +1928,6 @@
             document.getElementById('tradeSellerUsername').innerText = currentTrade.sellerName;
             document.getElementById('tradeRateInfo').innerText = `Rate: 1 USD = ${currentTrade.rate.toFixed(2)} ETB`;
             
-            // Adjust modal text based on whether user is buying or selling
             const modalTitle = document.getElementById('tradeModalTitleText');
             const summaryLabel = document.getElementById('tradeSummaryLabel');
             const submitBtn = document.getElementById('tradeSubmitBtn');
@@ -2088,6 +2082,8 @@
             if (tabId === 'orders') {
                 renderOngoingOrders();
                 renderCompletedOrders();
+            } else if (tabId === 'wallet') {
+                updateWalletDisplay();
             }
         }
 
@@ -2246,7 +2242,10 @@
         }
 
         function handleHistory() { alert('Loading transaction history...'); }
-        function refreshWallet() { alert('Wallet balance refreshed.'); }
+        function refreshWallet() { 
+            updateWalletDisplay();
+            alert('Wallet balance refreshed.'); 
+        }
         function refreshDeposit() { alert('Refreshing deposit channels...'); }
         function refreshWithdraw() { alert('Refreshing withdrawal channels...'); }
         function toggleOnlineStatus() { const isOnline = document.getElementById('keepOnlineToggle').checked; console.log('Online status:', isOnline); }
@@ -2263,6 +2262,7 @@
 
         renderHomeAds();
         renderMyAds();
+        updateWalletDisplay();
     </script>
 </body>
 </html>
