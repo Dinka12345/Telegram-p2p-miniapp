@@ -46,6 +46,7 @@
   .app{flex:1; background:#fff; display:flex; flex-direction:column; min-height:0;}
   .screen{flex:1; overflow-y:auto; padding-bottom:10px;}
   .screen.hidden{display:none;}
+  .hidden{display:none;}
 
   /* ---- top nav tabs ---- */
   .topnav{
@@ -131,6 +132,55 @@
   .chip.cancelled{background:#F0F0F0; color:var(--gray);}
   .order-row-sub{font-size:12px; color:var(--gray);}
   .order-row-timer{font-size:11px; color:var(--red); margin-top:4px; font-weight:600;}
+
+  /* ---- order history (restyled) ---- */
+  .oh-topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px;}
+  .oh-topbar .back{font-size:19px; color:var(--black); width:24px;}
+  .oh-topbar .oh-title{font-size:16.5px; font-weight:800;}
+  .oh-topbar .oh-icons{display:flex; align-items:center; gap:16px; color:var(--black);}
+  .oh-topbar .oh-icons svg{width:19px; height:19px;}
+  .oh-tabs{display:flex; gap:22px; padding:4px 16px 0;}
+  .oh-tabs .oh-tab{font-size:15px; font-weight:600; color:var(--gray); padding-bottom:10px;}
+  .oh-tabs .oh-tab.active{color:var(--black); font-weight:800; border-bottom:2.5px solid var(--yellow);}
+  .oh-filters{display:flex; gap:8px; padding:10px 16px 12px; border-bottom:1px solid var(--line);}
+  .oh-filters .oh-chip{font-size:12.5px; font-weight:600; color:var(--gray); padding:6px 12px; border-radius:14px; background:#F5F5F5;}
+  .oh-filters .oh-chip.active{background:#EFEFEF; color:var(--black); font-weight:700;}
+
+  .oh-card{padding:16px; border-bottom:8px solid #FAFAFA; cursor:pointer;}
+  .oh-card-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .oh-card-side{font-size:15px; font-weight:800;}
+  .oh-card-side .s-buy{color:var(--green-dark);}
+  .oh-card-side .s-sell{color:var(--red);}
+  .oh-card-side .s-asset{color:var(--black);}
+  .oh-status{font-size:11.5px; font-weight:600; color:var(--gray); background:#F0F0F0; padding:4px 10px; border-radius:5px;}
+  .oh-status.completed{color:var(--black); background:#F0F0F0;}
+  .oh-status.cancelled{color:var(--gray-light); background:#F5F5F5;}
+  .oh-status.disputed{color:var(--red); background:#FDE8EA;}
+  .oh-row{display:flex; justify-content:space-between; font-size:13.5px; padding:4px 0; color:var(--gray);}
+  .oh-row .v{font-weight:700; color:var(--black);}
+  .oh-order-id{display:flex; align-items:center; gap:5px;}
+  .oh-order-id .cp-ic{font-size:11px; color:var(--gray-light);}
+  .oh-tag-row{display:flex; align-items:center; justify-content:space-between; margin-top:10px;}
+  .oh-cp-tag{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--black); background:#F5F5F5; padding:6px 10px; border-radius:8px;}
+  .oh-time{font-size:11.5px; color:var(--gray-light);}
+  .oh-note{padding:22px 20px; text-align:center; color:var(--gray-light); font-size:12px; line-height:1.6;}
+
+  /* ---- payment methods sub-screen ---- */
+  .pm-topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 16px 12px;}
+  .pm-topbar .back{font-size:19px; color:var(--black); width:24px; cursor:pointer;}
+  .pm-topbar .pm-title{font-size:16px; font-weight:800;}
+  .pm-card{margin:0 16px 14px; border:1px solid var(--line); border-radius:12px; padding:14px 16px; position:relative;}
+  .pm-card-head{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .pm-bar{width:4px; height:16px; border-radius:2px; flex-shrink:0;}
+  .pm-name{font-size:15px; font-weight:800; color:var(--black);}
+  .pm-addcur{font-size:11.5px; color:var(--yellow); font-weight:700; background:#FFF8E6; padding:3px 8px; border-radius:10px; display:flex; align-items:center; gap:2px;}
+  .pm-holder{font-size:13px; color:var(--gray-light); letter-spacing:.3px; margin-bottom:4px;}
+  .pm-number{font-size:14px; color:var(--gray-light);}
+  .pm-edit{position:absolute; right:14px; bottom:14px; color:var(--black); font-size:15px;}
+  .pm-add-btn{
+    display:block; width:calc(100% - 32px); margin:20px 16px; background:var(--yellow); border:none; border-radius:10px;
+    padding:14px; font-size:14.5px; font-weight:800; color:#000; cursor:pointer;
+  }
 
   /* ---- ads (my ads) tab ---- */
   .post-box{margin:14px 16px; border:1px solid var(--line); border-radius:12px; padding:14px;}
@@ -329,7 +379,28 @@
 
         <!-- ============ ORDERS TAB ============ -->
         <div class="screen hidden" id="screen-orders">
-          <div class="topnav"><span class="tab active" style="color:#1E2329;font-weight:800;">Order History</span></div>
+          <div class="oh-topbar">
+            <span class="back">&#8592;</span>
+            <span class="oh-title">Order History</span>
+            <div class="oh-icons">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v6M9 11l3 3 3-3"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 8v5l-4 2v-7z"/></svg>
+            </div>
+          </div>
+
+          <div class="oh-tabs">
+            <span class="oh-tab" id="ohTabOngoing" onclick="setOrderMainTab('ongoing')">Ongoing</span>
+            <span class="oh-tab active" id="ohTabFulfilled" onclick="setOrderMainTab('fulfilled')">Fulfilled</span>
+          </div>
+
+          <div class="oh-filters" id="ohFilters">
+            <span class="oh-chip active" data-f="all" onclick="setOrderSubFilter('all')">All</span>
+            <span class="oh-chip" data-f="completed" onclick="setOrderSubFilter('completed')">Completed</span>
+            <span class="oh-chip" data-f="cancelled" onclick="setOrderSubFilter('cancelled')">Canceled</span>
+            <span class="oh-chip" data-f="disputed" onclick="setOrderSubFilter('disputed')">Appeal</span>
+          </div>
+
           <div id="orderList"></div>
         </div>
 
@@ -436,10 +507,10 @@
               <span class="li-label">Custom Alerts</span>
               <span class="li-chev">&#8250;</span>
             </div>
-            <div class="list-row">
+            <div class="list-row" onclick="openPayMethods()">
               <span class="li-ic">&#128179;</span>
               <span class="li-label">Payment Method(s)</span>
-              <span class="li-count">3</span>
+              <span class="li-count" id="payMethodCount">3</span>
               <span class="li-chev">&#8250;</span>
             </div>
             <div class="list-row">
@@ -483,6 +554,17 @@
           </div>
 
           <div class="wallet-card" id="walletCard" style="margin:20px 16px; border:1px solid var(--line); border-radius:12px; padding:14px 16px;"></div>
+        </div>
+
+        <!-- ============ PAYMENT METHODS SUB-SCREEN ============ -->
+        <div class="screen hidden" id="screen-paymethods">
+          <div class="pm-topbar">
+            <span class="back" onclick="closePayMethods()">&#8592;</span>
+            <span class="pm-title">P2P Payment Method(s)</span>
+            <span style="width:19px;"></span>
+          </div>
+          <div id="payMethodList"></div>
+          <button class="pm-add-btn" onclick="addPayMethod()">Add a payment method</button>
         </div>
 
       </div>
@@ -536,13 +618,25 @@ const state = {
   currentUser:'you',
   currentTab:'p2p',
   profileSubtab:'trade',
+  orderMainTab:'fulfilled',
+  orderSubFilter:'all',
   side:'buy', // which side of the book we're browsing: buy = I want to buy USDT (shows sell ads), sell = I want to sell USDT (shows buy ads)
   ads:[
     {id:'ad-1', side:'sell', user:'bob', amount:500, price:160.50, method:'Telebirr', minUsd:8000, maxUsd:80000},
     {id:'ad-2', side:'sell', user:'carol', amount:2000, price:159.00, method:'Bank Transfer', minUsd:20000, maxUsd:318000},
     {id:'ad-3', side:'buy', user:'goro', amount:800, price:158.00, method:'CBE Birr', minUsd:10000, maxUsd:126400},
   ],
-  orders:[],
+  orders:[
+    {id:'order-seed-1', side:'sell', seller:'bob', buyer:'you', amount:41.20, price:161.30, method:'Telebirr',
+     status:'released', log:[{t:'13:12:02', msg:'Order completed.'}], createdAt:Date.now()-1000*60*60*26, deadline:null},
+    {id:'order-seed-2', side:'sell', seller:'carol', buyer:'you', amount:18.75, price:163.40, method:'Bank Transfer',
+     status:'cancelled', log:[{t:'09:44:10', msg:'Auto-cancelled — payment window expired.'}], createdAt:Date.now()-1000*60*60*72, deadline:null},
+  ],
+  paymentMethods:[
+    {id:'pm-1', method:'Telebirr', color:'#0ECB81', holder:'ACCOUNT HOLDER', number:'09•• •••• 21'},
+    {id:'pm-2', method:'CBE Birr', color:'#C23B7A', holder:'ACCOUNT HOLDER', number:'09•• •••• 44'},
+    {id:'pm-3', method:'Bank Transfer', color:'#3375BB', holder:'ACCOUNT HOLDER', number:'10•• •••• •396'},
+  ],
   seq:1,
   activeAd:null,
   activeOrder:null,
@@ -587,6 +681,47 @@ function setProfileSubtab(tab){
   document.getElementById('subtabOthers').classList.toggle('active', tab==='others');
   document.getElementById('profileListTrade').classList.toggle('hidden', tab!=='trade');
   document.getElementById('profileListOthers').classList.toggle('hidden', tab!=='others');
+}
+function setOrderMainTab(tab){
+  state.orderMainTab = tab;
+  state.orderSubFilter = 'all';
+  document.getElementById('ohTabOngoing').classList.toggle('active', tab==='ongoing');
+  document.getElementById('ohTabFulfilled').classList.toggle('active', tab==='fulfilled');
+  document.getElementById('ohFilters').classList.toggle('hidden', tab!=='fulfilled');
+  document.querySelectorAll('#ohFilters .oh-chip').forEach(c=>c.classList.toggle('active', c.dataset.f==='all'));
+  renderOrderList();
+}
+function setOrderSubFilter(f){
+  state.orderSubFilter = f;
+  document.querySelectorAll('#ohFilters .oh-chip').forEach(c=>c.classList.toggle('active', c.dataset.f===f));
+  renderOrderList();
+}
+function openPayMethods(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('screen-paymethods').classList.remove('hidden');
+  renderPayMethods();
+}
+function closePayMethods(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('screen-profile').classList.remove('hidden');
+}
+function renderPayMethods(){
+  document.getElementById('payMethodCount').textContent = state.paymentMethods.length;
+  document.getElementById('payMethodList').innerHTML = state.paymentMethods.map(pm=>`
+    <div class="pm-card">
+      <div class="pm-card-head">
+        <span class="pm-bar" style="background:${pm.color}"></span>
+        <span class="pm-name">${pm.method}</span>
+        <span class="pm-addcur">Add Currency &#8250;</span>
+      </div>
+      <div class="pm-holder">${pm.holder}</div>
+      <div class="pm-number">${pm.number}</div>
+      <span class="pm-edit">&#9998;</span>
+    </div>
+  `).join('');
+}
+function addPayMethod(){
+  alert('Add a payment method — flow not wired up in this prototype.');
 }
 
 /* ================= render ================= */
@@ -683,32 +818,66 @@ function stepIndex(status){
   return STEPS.indexOf(status);
 }
 
+function orderDisplayId(o){
+  if(!o.displayId){
+    o.displayId = '2' + Math.floor(1e14 + Math.random()*8e14);
+  }
+  return o.displayId;
+}
+function fmtOrderTime(ts){
+  const d = new Date(ts);
+  const pad = n=>n.toString().padStart(2,'0');
+  return `${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+const ONGOING_STATUSES = ['escrow','payment_sent'];
+const FULFILLED_STATUSES = ['released','cancelled','disputed'];
 function renderOrderList(){
   const box = document.getElementById('orderList');
-  const mine = state.orders.filter(o=>o.buyer===state.currentUser||o.seller===state.currentUser)
-                            .sort((a,b)=>b.createdAt-a.createdAt);
+  let mine = state.orders.filter(o=>o.buyer===state.currentUser||o.seller===state.currentUser);
+
+  if(state.orderMainTab==='ongoing'){
+    mine = mine.filter(o=>ONGOING_STATUSES.includes(o.status));
+  } else {
+    mine = mine.filter(o=>FULFILLED_STATUSES.includes(o.status));
+    if(state.orderSubFilter==='completed') mine = mine.filter(o=>o.status==='released');
+    else if(state.orderSubFilter==='cancelled') mine = mine.filter(o=>o.status==='cancelled');
+    else if(state.orderSubFilter==='disputed') mine = mine.filter(o=>o.status==='disputed');
+  }
+  mine = mine.sort((a,b)=>b.createdAt-a.createdAt);
+
   if(!mine.length){
-    box.innerHTML = `<div class="empty-state">No orders yet.<br>Start a trade from the P2P tab.</div>`;
+    box.innerHTML = `<div class="empty-state">No orders here yet.<br>Start a trade from the P2P tab.</div>`;
     return;
   }
+
+  const statusChipClass = {released:'completed', cancelled:'cancelled', disputed:'disputed', escrow:'', payment_sent:''};
+  const statusChipLabel = {released:'Completed', cancelled:'Canceled', disputed:'Appeal', escrow:'Escrow locked', payment_sent:'Payment sent'};
+
   box.innerHTML = mine.map(o=>{
-    const counterparty = o.seller===state.currentUser ? state.users[o.buyer].name : state.users[o.seller].name;
-    const role = o.seller===state.currentUser ? 'Selling to' : 'Buying from';
-    let timerHtml = '';
-    if(o.status==='escrow' && o.deadline){
-      const remaining=(o.deadline-Date.now())/1000;
-      timerHtml = `<div class="order-row-timer">Pay within ${fmtClock(remaining)}</div>`;
-    }
+    const isBuyer = o.buyer===state.currentUser;
+    const counterparty = isBuyer ? state.users[o.seller].name : state.users[o.buyer].name;
+    const sideLabel = isBuyer ? '<span class="s-buy">Buy</span>' : '<span class="s-sell">Sell</span>';
+    const total = o.amount*o.price;
     return `
-    <div class="order-row" onclick="openOrderDetail('${o.id}')">
-      <div class="order-row-top">
-        <span class="order-row-title">${role} ${counterparty}</span>
-        <span class="chip ${o.status}">${statusLabel(o.status)}</span>
+    <div class="oh-card" onclick="openOrderDetail('${o.id}')">
+      <div class="oh-card-top">
+        <span class="oh-card-side">${sideLabel} <span class="s-asset">USDT</span></span>
+        <span class="oh-status ${statusChipClass[o.status]}">${statusChipLabel[o.status]}</span>
       </div>
-      <div class="order-row-sub">${fmtUSDT(o.amount)} &middot; ${fmtETB(o.amount*o.price)} &middot; ${o.method}</div>
-      ${timerHtml}
+      <div class="oh-row"><span>Amount</span><span class="v">Br ${total.toLocaleString(undefined,{maximumFractionDigits:2})}</span></div>
+      <div class="oh-row"><span>Price</span><span class="v">Br ${o.price.toFixed(2)}</span></div>
+      <div class="oh-row"><span>Received Quantity</span><span class="v">${o.amount.toFixed(2)} USDT</span></div>
+      <div class="oh-row"><span>Order</span><span class="v oh-order-id">${orderDisplayId(o)} <span class="cp-ic">&#128203;</span></span></div>
+      <div class="oh-tag-row">
+        <span class="oh-cp-tag">${counterparty} &#128172;</span>
+        <span class="oh-time">${fmtOrderTime(o.createdAt)}</span>
+      </div>
     </div>`;
   }).join('');
+
+  if(state.orderMainTab==='fulfilled'){
+    box.innerHTML += `<div class="oh-note">Only showing records from the last 6 months.<br>Adjust filter to view more.</div>`;
+  }
 }
 function statusLabel(s){
   return {escrow:'Escrow locked', payment_sent:'Payment sent', released:'Completed', disputed:'Disputed', cancelled:'Cancelled'}[s] || s;
