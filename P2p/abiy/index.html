@@ -133,7 +133,7 @@
   .order-row-sub{font-size:12px; color:var(--gray);}
   .order-row-timer{font-size:11px; color:var(--red); margin-top:4px; font-weight:600;}
 
-  /* ---- order history (restyled) ---- */
+  /* ---- order history ---- */
   .oh-topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px;}
   .oh-topbar .back{font-size:19px; color:var(--black); width:24px;}
   .oh-topbar .oh-title{font-size:16.5px; font-weight:800;}
@@ -226,7 +226,6 @@
     width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; flex-shrink:0;
   }
   .wa-ic.usdt{background:#26A17B;}
-  .wa-ic.etb{background:var(--yellow); color:#000;}
   .wa-name{font-size:14px; font-weight:700; color:var(--black);}
   .wa-sub{font-size:11.5px; color:var(--gray); margin-top:2px;}
   .wa-right{text-align:right;}
@@ -250,7 +249,7 @@
   }
   .dw-method-row .m-left{display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; color:var(--black);}
 
-  /* ================= PROFILE TAB (restyled) ================= */
+  /* ================= PROFILE TAB ================= */
   .profile-topbar{
     display:flex; align-items:center; justify-content:space-between; padding:14px 16px 4px;
   }
@@ -300,6 +299,11 @@
   .list-row .li-label{flex:1; font-size:14px; font-weight:500; color:var(--black);}
   .list-row .li-count{font-size:13px; color:var(--gray-light); margin-right:2px;}
   .list-row .li-chev{color:var(--gray-light); font-size:15px;}
+
+  .wallet-line { display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; }
+  .wallet-line .l { color:var(--gray); }
+  .wallet-line .v { font-weight:700; }
+  .wallet-line .v.locked { color:var(--gray-light); }
 
   /* ---- bottom tab bar ---- */
   .tabbar{display:flex; border-top:1px solid var(--line); background:#fff;}
@@ -502,9 +506,8 @@
 
           <div class="wallet-hero">
             <div class="ring"></div>
-            <div class="wh-label">Total estimated balance</div>
-            <div class="wh-total" id="walletTotalEtb">0 ETB</div>
-            <div class="wh-sub" id="walletTotalUsdt">0.00 USDT + 0 ETB cash</div>
+            <div class="wh-label" id="walletTitle">Total Estimated Balance</div>
+            <div class="wh-total" id="walletTotalUsdt">0.00 USDT</div>
             <div class="wh-actions">
               <button class="wh-btn deposit" onclick="openDeposit()">&#8595; Deposit</button>
               <button class="wh-btn withdraw" onclick="openWithdraw()">&#8593; Withdraw</button>
@@ -679,17 +682,17 @@
 /* ================= state ================= */
 const state = {
   users: {
-    you:{ name:'ABFAST', bot:false, usdt:{available:420, locked:0}, etb:832000 },
-    bob:{ name:'Bob', bot:true, usdt:{available:6000, locked:0}, etb:2368000 },
-    carol:{ name:'Carol', bot:true, usdt:{available:7500, locked:0}, etb:1440000 },
-    goro:{ name:'GoroXchange', bot:true, usdt:{available:12000, locked:0}, etb:4800000 },
+    you:{ name:'ABFAST', bot:false, usdt:{available:420, locked:0} },
+    bob:{ name:'Bob', bot:true, usdt:{available:6000, locked:0} },
+    carol:{ name:'Carol', bot:true, usdt:{available:7500, locked:0} },
+    goro:{ name:'GoroXchange', bot:true, usdt:{available:12000, locked:0} },
   },
   currentUser:'you',
   currentTab:'p2p',
   profileSubtab:'trade',
   orderMainTab:'fulfilled',
   orderSubFilter:'all',
-  side:'buy', // which side of the book we're browsing: buy = I want to buy USDT (shows sell ads), sell = I want to sell USDT (shows buy ads)
+  side:'buy', 
   ads:[
     {id:'ad-1', side:'sell', user:'bob', amount:500, price:160.50, method:'Telebirr', minUsd:8000, maxUsd:80000},
     {id:'ad-2', side:'sell', user:'carol', amount:2000, price:159.00, method:'Bank Transfer', minUsd:20000, maxUsd:318000},
@@ -718,7 +721,6 @@ function botDelay(){ return BOT_RESPONSE_MIN_MS + Math.random()*(BOT_RESPONSE_MA
 const PAYMENT_WINDOW_SECONDS = 90;
 const STEPS = ['created','escrow','payment_sent','released'];
 const STEP_LABELS = {created:'Opened', escrow:'Escrow locked', payment_sent:'Payment sent', released:'Released'};
-const USDT_ETB_RATE = 160; // used only to show an estimated total balance in ETB terms
 
 function fmtETB(n){ return n.toLocaleString(undefined,{maximumFractionDigits:2})+' ETB'; }
 function fmtUSDT(n){ return n.toFixed(2)+' USDT'; }
@@ -729,7 +731,7 @@ function initials(name){ return name.charAt(0).toUpperCase(); }
 function payDotClass(method){
   if(method==='Telebirr') return 'dot-green';
   if(method==='CBE Birr') return 'dot-blue';
-  return 'dot-yellow'; // Bank Transfer
+  return 'dot-yellow'; 
 }
 
 /* ================= tabs ================= */
@@ -864,13 +866,12 @@ function deletePayMethod(id){
 function walletTotals(){
   const u = state.users[state.currentUser];
   const usdtTotal = u.usdt.available + u.usdt.locked;
-  const estEtb = Math.round(usdtTotal*USDT_ETB_RATE + u.etb);
-  return { usdtTotal, estEtb, etb:u.etb, usdt:u.usdt };
+  return { usdtTotal, usdt:u.usdt };
 }
 function renderWallet(){
   const t = walletTotals();
-  document.getElementById('walletTotalEtb').textContent = fmtETB(t.estEtb);
-  document.getElementById('walletTotalUsdt').textContent = `${fmtUSDT(t.usdt.available)} available + ${fmtETB(t.etb)} cash`;
+  document.getElementById('walletTotalUsdt').textContent = fmtUSDT(t.usdtTotal);
+  
   document.getElementById('walletAssets').innerHTML = `
     <div class="wa-row">
       <div class="wa-left">
@@ -885,126 +886,103 @@ function renderWallet(){
         <div class="wa-locked">${t.usdt.locked>0 ? fmtUSDT(t.usdt.locked)+' in escrow' : 'None in escrow'}</div>
       </div>
     </div>
-    <div class="wa-row">
-      <div class="wa-left">
-        <div class="wa-ic etb">Br</div>
-        <div>
-          <div class="wa-name">ETB Cash</div>
-          <div class="wa-sub">Fiat balance</div>
-        </div>
-      </div>
-      <div class="wa-right">
-        <div class="wa-amt">${fmtETB(t.etb)}</div>
-        <div class="wa-locked">&nbsp;</div>
-      </div>
-    </div>
   `;
 }
 
 function openDeposit(){
   state.activeAd = null; state.activeOrder = null;
-  document.getElementById('sheetTitle').textContent = 'Deposit';
+  document.getElementById('sheetTitle').textContent = 'Deposit USDT';
   document.getElementById('modalOverlay').classList.remove('hidden');
   renderDepositForm();
 }
-function renderDepositForm(asset){
-  asset = asset || 'usdt';
+
+function renderDepositForm(){
   document.getElementById('sheetBody').innerHTML = `
     <div class="form-row">
       <div class="field" style="flex:1;">
-        <label>Asset</label>
-        <select id="depAsset" onchange="renderDepositForm(this.value)">
-          <option value="usdt" ${asset==='usdt'?'selected':''}>USDT</option>
-          <option value="etb" ${asset==='etb'?'selected':''}>ETB Cash</option>
+        <label>Network</label>
+        <select id="depNetwork">
+          <option value="trc20">Tron (TRC20)</option>
+          <option value="bep20">BNB Smart Chain (BEP20)</option>
+          <option value="erc20">Ethereum (ERC20)</option>
         </select>
       </div>
     </div>
-    <div class="amount-input-row">
-      <input type="number" id="depAmount" step="1" placeholder="0" oninput="updateDepositTotal()">
-      <span class="amount-unit">${asset==='usdt'?'USDT':'ETB'}</span>
+    
+    <div class="info-box" style="text-align:center; padding: 20px 14px; margin-top: 10px;">
+      <div style="width:140px; height:140px; background:#f5f5f5; border:1px solid #eaecef; border-radius:8px; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; color:var(--gray-light); font-size:12px;">
+        [ QR Code ]
+      </div>
+      <div style="font-size:11.5px; color:var(--gray); margin-bottom:6px;">Deposit Address</div>
+      <div style="font-weight:800; font-size:14px; color:var(--black); word-break:break-all; letter-spacing: 0.5px;">T9yD14Nj9j7xAB4dbGeiX9h8UkpQxCbY</div>
     </div>
-    <div class="limit-hint">${asset==='usdt' ? 'Deposit USDT from an external wallet.' : 'Deposit ETB via a linked payment method.'}</div>
-    ${asset==='etb' ? `
-    <div class="dw-method-row" onclick="document.getElementById('depMethod').click()">
-      <div class="m-left"><span class="pay-dot dot-green"></span>${state.paymentMethods[0] ? state.paymentMethods[0].method : 'Payment method'}</div>
-      <span class="li-chev">&#8250;</span>
+    
+    <div class="amount-input-row" style="margin-top:16px;">
+      <input type="number" id="depAmount" step="1" placeholder="Amount to deposit" oninput="updateDepositTotal()">
+      <span class="amount-unit">USDT</span>
     </div>
-    <select id="depMethod" style="display:none;">
-      ${state.paymentMethods.map(pm=>`<option value="${pm.id}">${pm.method}</option>`).join('')}
-    </select>
-    ` : ''}
-    <div class="total-row"><span>You'll receive</span><b id="depTotal">${asset==='usdt'?'0.00 USDT':'0 ETB'}</b></div>
+    <div class="total-row"><span>You'll receive</span><b id="depTotal">0.00 USDT</b></div>
     <button class="place-btn neutral" onclick="confirmDeposit()">Confirm deposit</button>
   `;
 }
+
 function updateDepositTotal(){
-  const asset = document.getElementById('depAsset').value;
   const amt = parseFloat(document.getElementById('depAmount').value)||0;
-  document.getElementById('depTotal').textContent = asset==='usdt' ? fmtUSDT(amt) : fmtETB(amt);
+  document.getElementById('depTotal').textContent = fmtUSDT(amt);
 }
+
 function confirmDeposit(){
-  const asset = document.getElementById('depAsset').value;
   const amt = parseFloat(document.getElementById('depAmount').value);
   if(!amt || amt<=0){ alert('Enter a valid amount to deposit.'); return; }
+  
   const u = state.users[state.currentUser];
-  if(asset==='usdt') u.usdt.available += amt; else u.etb += amt;
-  state.walletTx.unshift({t:now(), msg:`Deposited ${asset==='usdt'?fmtUSDT(amt):fmtETB(amt)}.`});
+  u.usdt.available += amt;
+  state.walletTx.unshift({t:now(), msg:\`Deposited \${fmtUSDT(amt)}.\`});
   closeModal();
   renderWallet();
 }
 
 function openWithdraw(){
   state.activeAd = null; state.activeOrder = null;
-  document.getElementById('sheetTitle').textContent = 'Withdraw';
+  document.getElementById('sheetTitle').textContent = 'Withdraw USDT';
   document.getElementById('modalOverlay').classList.remove('hidden');
   renderWithdrawForm();
 }
-function renderWithdrawForm(asset){
-  asset = asset || 'usdt';
+
+function renderWithdrawForm(){
   const u = state.users[state.currentUser];
-  const max = asset==='usdt' ? u.usdt.available : u.etb;
+  const max = u.usdt.available;
   document.getElementById('sheetBody').innerHTML = `
     <div class="form-row">
       <div class="field" style="flex:1;">
-        <label>Asset</label>
-        <select id="wdAsset" onchange="renderWithdrawForm(this.value)">
-          <option value="usdt" ${asset==='usdt'?'selected':''}>USDT</option>
-          <option value="etb" ${asset==='etb'?'selected':''}>ETB Cash</option>
-        </select>
+        <label>Withdraw Address</label>
+        <input type="text" placeholder="Enter USDT address" style="padding:10px; border:1px solid var(--line); border-radius:8px; font-family:inherit;">
       </div>
     </div>
-    <div class="amount-input-row">
+    <div class="amount-input-row" style="margin-top:10px;">
       <input type="number" id="wdAmount" step="1" placeholder="0" max="${max}" oninput="updateWithdrawTotal()">
-      <span class="amount-unit">${asset==='usdt'?'USDT':'ETB'}</span>
+      <span class="amount-unit">USDT</span>
     </div>
-    <div class="limit-hint">Available to withdraw: <b>${asset==='usdt'?fmtUSDT(max):fmtETB(max)}</b></div>
-    ${asset==='etb' ? `
-    <div class="dw-method-row" onclick="document.getElementById('wdMethod').click()">
-      <div class="m-left"><span class="pay-dot dot-green"></span>${state.paymentMethods[0] ? state.paymentMethods[0].method : 'Payment method'}</div>
-      <span class="li-chev">&#8250;</span>
-    </div>
-    <select id="wdMethod" style="display:none;">
-      ${state.paymentMethods.map(pm=>`<option value="${pm.id}">${pm.method}</option>`).join('')}
-    </select>
-    ` : ''}
-    <div class="total-row"><span>You'll withdraw</span><b id="wdTotal">${asset==='usdt'?'0.00 USDT':'0 ETB'}</b></div>
+    <div class="limit-hint">Available to withdraw: <b>${fmtUSDT(max)}</b></div>
+    <div class="total-row"><span>You'll withdraw</span><b id="wdTotal">0.00 USDT</b></div>
     <button class="place-btn neutral" onclick="confirmWithdraw()">Confirm withdrawal</button>
   `;
 }
+
 function updateWithdrawTotal(){
-  const asset = document.getElementById('wdAsset').value;
   const amt = parseFloat(document.getElementById('wdAmount').value)||0;
-  document.getElementById('wdTotal').textContent = asset==='usdt' ? fmtUSDT(amt) : fmtETB(amt);
+  document.getElementById('wdTotal').textContent = fmtUSDT(amt);
 }
+
 function confirmWithdraw(){
-  const asset = document.getElementById('wdAsset').value;
   const amt = parseFloat(document.getElementById('wdAmount').value);
   const u = state.users[state.currentUser];
-  const max = asset==='usdt' ? u.usdt.available : u.etb;
+  const max = u.usdt.available;
   if(!amt || amt<=0){ alert('Enter a valid amount to withdraw.'); return; }
   if(amt>max){ alert('That is more than your available balance.'); return; }
-  if(asset==='usdt') u.usdt.available -= amt; else u.etb -= amt;
-  state.walletTx.unshift({t:now(), msg:`Withdrew ${asset==='usdt'?fmtUSDT(amt):fmtETB(amt)}.`});
+  
+  u.usdt.available -= amt;
+  state.walletTx.unshift({t:now(), msg:\`Withdrew \${fmtUSDT(amt)}.\`});
   closeModal();
   renderWallet();
 }
@@ -1021,7 +999,6 @@ function render(){
 
 function renderAdList(){
   const box = document.getElementById('adList');
-  // Buy tab shows sell-side ads (I can buy from a seller); Sell tab shows buy-side ads
   const wanted = state.side==='buy' ? 'sell' : 'buy';
   const visible = state.ads.filter(a => a.side===wanted);
   if(!visible.length){
@@ -1094,7 +1071,6 @@ function renderProfile(){
   document.getElementById('walletCard').innerHTML = `
     <div class="wallet-line"><span class="l">USDT available</span><span class="v">${fmtUSDT(u.usdt.available)}</span></div>
     <div class="wallet-line"><span class="l">USDT locked in escrow</span><span class="v locked">${fmtUSDT(u.usdt.locked)}</span></div>
-    <div class="wallet-line"><span class="l">Cash balance</span><span class="v">${fmtETB(u.etb)}</span></div>
   `;
 }
 
@@ -1221,7 +1197,6 @@ function confirmOpenTrade(){
   state.orders.push(order);
   maybeScheduleBotResponse(order);
 
-  // reduce or remove the ad
   a.amount -= amt;
   if(a.amount <= 0.00001) state.ads = state.ads.filter(x=>x.id!==a.id);
 
@@ -1303,10 +1278,8 @@ function markPaid(orderId){
   render();
 }
 
-/* A bot counterparty reacts on its own, like a real trader on the other end. */
 function maybeScheduleBotResponse(o){
   if(o.status==='escrow' && state.users[o.buyer].bot){
-    // bot is the buyer — it "pays" and marks the order after a short delay
     setTimeout(()=>{
       const cur = state.orders.find(x=>x.id===o.id);
       if(cur && cur.status==='escrow'){
@@ -1318,7 +1291,6 @@ function maybeScheduleBotResponse(o){
     }, botDelay());
   }
   if(o.status==='payment_sent' && state.users[o.seller].bot){
-    // bot is the seller — it "confirms receipt" and releases escrow after a short delay
     setTimeout(()=>{
       const cur = state.orders.find(x=>x.id===o.id);
       if(cur && cur.status==='payment_sent'){
@@ -1402,7 +1374,6 @@ document.getElementById('postAdBtn').addEventListener('click', ()=>{
   render();
 });
 
-/* bots occasionally refresh the order book so it doesn't go stale */
 const BOT_AD_TEMPLATES = [
   {side:'sell', method:'Telebirr', priceRange:[157,162], amtRange:[100,900]},
   {side:'sell', method:'Bank Transfer', priceRange:[158,163], amtRange:[200,2500]},
