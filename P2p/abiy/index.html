@@ -707,21 +707,86 @@ function closePayMethods(){
 }
 function renderPayMethods(){
   document.getElementById('payMethodCount').textContent = state.paymentMethods.length;
+  if(!state.paymentMethods.length){
+    document.getElementById('payMethodList').innerHTML = `<div class="empty-state">No payment methods yet.<br>Add one below.</div>`;
+    return;
+  }
   document.getElementById('payMethodList').innerHTML = state.paymentMethods.map(pm=>`
-    <div class="pm-card">
+    <div class="pm-card" onclick="openEditPayMethod('${pm.id}')">
       <div class="pm-card-head">
         <span class="pm-bar" style="background:${pm.color}"></span>
         <span class="pm-name">${pm.method}</span>
-        <span class="pm-addcur">Add Currency &#8250;</span>
       </div>
       <div class="pm-holder">${pm.holder}</div>
       <div class="pm-number">${pm.number}</div>
-      <span class="pm-edit">&#9998;</span>
+      <span class="pm-edit" onclick="event.stopPropagation(); openEditPayMethod('${pm.id}')">&#9998;</span>
     </div>
   `).join('');
 }
+
+const PM_METHOD_COLORS = {'Telebirr':'#0ECB81','CBE Birr':'#C23B7A','CBE':'#3375BB','Bank Transfer':'#3375BB','Amole':'#F0B90B','HelloCash':'#7A5CF0'};
+function pmColorFor(method){ return PM_METHOD_COLORS[method] || '#707A8A'; }
+
 function addPayMethod(){
-  alert('Add a payment method — flow not wired up in this prototype.');
+  state.activeAd = null; state.activeOrder = null;
+  document.getElementById('sheetTitle').textContent = 'Add a payment method';
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  renderPayMethodForm(null);
+}
+function openEditPayMethod(id){
+  const pm = state.paymentMethods.find(x=>x.id===id);
+  if(!pm) return;
+  state.activeAd = null; state.activeOrder = null;
+  document.getElementById('sheetTitle').textContent = 'Edit payment method';
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  renderPayMethodForm(pm);
+}
+function renderPayMethodForm(pm){
+  const isEdit = !!pm;
+  document.getElementById('sheetBody').innerHTML = `
+    <div class="form-row">
+      <div class="field" style="flex:1;">
+        <label>Payment method</label>
+        <select id="pmMethodInput">
+          ${['Telebirr','CBE Birr','CBE','Bank Transfer','Amole','HelloCash'].map(m=>
+            `<option value="${m}" ${pm&&pm.method===m?'selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field" style="flex:1;">
+        <label>Account holder name</label>
+        <input type="text" id="pmHolderInput" placeholder="Full name" value="${pm?pm.holder:''}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field" style="flex:1;">
+        <label>Account / phone number</label>
+        <input type="text" id="pmNumberInput" placeholder="e.g. 0912345678" value="${pm?pm.number:''}">
+      </div>
+    </div>
+    <button class="post-submit" onclick="savePayMethod(${isEdit?`'${pm.id}'`:'null'})">${isEdit?'Save changes':'Add payment method'}</button>
+    ${isEdit?`<button class="action-btn danger-outline" onclick="deletePayMethod('${pm.id}')">Remove this payment method</button>`:''}
+  `;
+}
+function savePayMethod(id){
+  const method = document.getElementById('pmMethodInput').value;
+  const holder = document.getElementById('pmHolderInput').value.trim();
+  const number = document.getElementById('pmNumberInput').value.trim();
+  if(!holder || !number){ alert('Enter the account holder name and account/phone number.'); return; }
+  if(id){
+    const pm = state.paymentMethods.find(x=>x.id===id);
+    pm.method = method; pm.holder = holder; pm.number = number; pm.color = pmColorFor(method);
+  } else {
+    state.paymentMethods.push({id:'pm-'+state.seq++, method, holder, number, color:pmColorFor(method)});
+  }
+  closeModal();
+  renderPayMethods();
+}
+function deletePayMethod(id){
+  state.paymentMethods = state.paymentMethods.filter(x=>x.id!==id);
+  closeModal();
+  renderPayMethods();
 }
 
 /* ================= render ================= */
