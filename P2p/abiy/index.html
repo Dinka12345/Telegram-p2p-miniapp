@@ -28,20 +28,6 @@
     padding:18px 10px 40px;
   }
 
-  /* ---- dev toolbar (outside the app skin, for demoing multiple users) ---- */
-  .devbar{
-    width:100%; max-width:412px; display:flex; align-items:center; justify-content:space-between;
-    background:#22262B; color:#C6CBD2; border-radius:10px; padding:9px 14px; margin-bottom:12px;
-    font-size:12px;
-  }
-  .devbar .grp{display:flex; align-items:center; gap:8px;}
-  .devbar select{
-    background:#2E333A; color:#fff; border:1px solid #3A4048; border-radius:5px; padding:5px 8px; font-size:12px;
-  }
-  .devbar button{
-    background:transparent; color:#C6CBD2; border:1px solid #3A4048; border-radius:5px; padding:5px 10px; font-size:11px; cursor:pointer;
-  }
-
   /* ---- phone frame ---- */
   .phone{
     width:100%; max-width:412px; background:#000; border-radius:34px; padding:10px;
@@ -163,17 +149,56 @@
   .myad-sub{font-size:11.5px; color:var(--gray); margin-top:4px;}
   .myad-cancel{font-size:11px; color:var(--red); font-weight:700; margin-top:8px; display:inline-block; cursor:pointer;}
 
-  /* ---- profile tab ---- */
-  .profile-head{padding:22px 16px 10px; display:flex; align-items:center; gap:12px;}
-  .profile-avatar{width:52px; height:52px; border-radius:50%; background:var(--black); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px;}
-  .profile-name{font-size:16px; font-weight:800;}
-  .profile-sub{font-size:11.5px; color:var(--gray);}
-  .wallet-card{margin:14px 16px; border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
-  .wallet-line{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13px;}
-  .wallet-line:last-child{border-bottom:none;}
-  .wallet-line .l{color:var(--gray);}
-  .wallet-line .v{font-weight:700;}
-  .v.locked{color:var(--yellow); background:#1E2329; padding:2px 8px; border-radius:6px;}
+  /* ================= PROFILE TAB (restyled) ================= */
+  .profile-topbar{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 16px 4px;
+  }
+  .profile-topbar .back{font-size:19px; color:var(--black); width:24px;}
+  .profile-topbar .right-icons{display:flex; align-items:center; gap:18px; color:var(--black);}
+  .profile-topbar svg{width:20px; height:20px;}
+
+  .profile-id{padding:14px 16px 0;}
+  .profile-id .profile-avatar{
+    width:64px; height:64px; border-radius:50%; background:#EDEDED; color:#444; display:flex; align-items:center;
+    justify-content:center; font-weight:600; font-size:26px; margin-bottom:10px;
+  }
+  .profile-id .name-row{display:flex; align-items:center; gap:8px;}
+  .profile-id .profile-name{font-size:20px; font-weight:800; letter-spacing:.2px;}
+  .profile-id .edit-ic{color:var(--gray); font-size:14px;}
+  .profile-id .profile-sub{font-size:13px; color:var(--gray); margin-top:4px;}
+  .profile-id .meta-row{display:flex; align-items:center; gap:14px; font-size:12.5px; color:var(--gray); margin-top:8px;}
+  .profile-id .meta-row .verified{color:var(--green-dark); font-weight:600; display:flex; align-items:center; gap:4px;}
+  .profile-id .meta-row b{color:var(--black); font-weight:700;}
+
+  .cat-tabs{display:flex; gap:22px; padding:20px 16px 0; border-bottom:1px solid var(--line);}
+  .cat-tabs .ct{font-size:14.5px; font-weight:600; color:var(--gray-light); padding-bottom:10px;}
+  .cat-tabs .ct.active{color:var(--black); font-weight:800; border-bottom:2.5px solid var(--yellow);}
+
+  .stats-box{
+    margin:14px 16px; border:1px solid var(--line); border-radius:12px; padding:16px 18px 8px;
+  }
+  .stats-grid{display:grid; grid-template-columns:1fr 1fr; row-gap:18px;}
+  .stats-grid .stat b{display:block; font-size:21px; font-weight:800; color:var(--black); margin-bottom:4px;}
+  .stats-grid .stat span{font-size:11.5px; color:var(--gray);}
+  .stats-more{
+    text-align:center; font-size:12px; color:var(--gray); padding:10px 0 2px; border-top:1px solid var(--line); margin-top:14px;
+    display:flex; align-items:center; justify-content:center; gap:4px;
+  }
+
+  .subtabs{display:flex; gap:26px; padding:16px 16px 0;}
+  .subtabs .st{font-size:14px; font-weight:600; color:var(--gray-light); padding-bottom:9px; cursor:pointer;}
+  .subtabs .st.active{color:var(--black); font-weight:800; border-bottom:2.5px solid var(--yellow);}
+
+  .list-section{padding:4px 0 6px;}
+  .list-row{
+    display:flex; align-items:center; gap:14px; padding:15px 16px; cursor:pointer;
+  }
+  .list-row .li-ic{
+    width:20px; height:20px; color:var(--black); flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  }
+  .list-row .li-label{flex:1; font-size:14px; font-weight:500; color:var(--black);}
+  .list-row .li-count{font-size:13px; color:var(--gray-light); margin-right:2px;}
+  .list-row .li-chev{color:var(--gray-light); font-size:15px;}
 
   /* ---- bottom tab bar ---- */
   .tabbar{display:flex; border-top:1px solid var(--line); background:#fff;}
@@ -256,8 +281,6 @@
 </style>
 </head>
 <body>
-
-
 
   <div class="phone">
     <div class="screen-wrap">
@@ -358,15 +381,108 @@
 
         <!-- ============ PROFILE TAB ============ -->
         <div class="screen hidden" id="screen-profile">
-          <div class="topnav"><span class="tab active" style="color:#1E2329;font-weight:800;">Profile</span></div>
-          <div class="profile-head">
-            <div class="profile-avatar" id="profAvatar">A</div>
-            <div>
-              <div class="profile-name" id="profName">Alice</div>
-              <div class="profile-sub">Verified P2P trader</div>
+
+          <div class="profile-topbar">
+            <span class="back">&#8592;</span>
+            <div class="right-icons">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M8 11l8-4M8 13l8 4"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             </div>
           </div>
-          <div class="wallet-card" id="walletCard"></div>
+
+          <div class="profile-id">
+            <div class="profile-avatar" id="profAvatar">A</div>
+            <div class="name-row">
+              <span class="profile-name" id="profName">ABFAST</span>
+              <span class="edit-ic">&#9998;</span>
+            </div>
+            <div class="profile-sub">Verified user</div>
+            <div class="meta-row">
+              <span class="verified">&#10003; Verified</span>
+              <span><b id="profFollowing">0</b> Following</span>
+              <span><b id="profFollowers">0</b> Followers</span>
+            </div>
+          </div>
+
+          <div class="cat-tabs">
+            <span class="ct active">Crypto</span>
+            <span class="ct">Lifestyle</span>
+          </div>
+
+          <div class="stats-box">
+            <div class="stats-grid">
+              <div class="stat"><b id="statTrades">0</b><span>30d Trades</span></div>
+              <div class="stat"><b id="statRate">0.00%</b><span>30d Completion Rate</span></div>
+              <div class="stat"><b id="statRelease">0.00 m</b><span>Avg. Release Time</span></div>
+              <div class="stat"><b id="statPay">0.00 m</b><span>Avg. Pay Time</span></div>
+            </div>
+            <div class="stats-more">More &#9662;</div>
+          </div>
+
+          <div class="subtabs">
+            <span class="st active" id="subtabTrade" onclick="setProfileSubtab('trade')">Trade</span>
+            <span class="st" id="subtabOthers" onclick="setProfileSubtab('others')">Others</span>
+          </div>
+
+          <div class="list-section" id="profileListTrade">
+            <div class="list-row">
+              <span class="li-ic">&#128077;</span>
+              <span class="li-label">Received Feedback</span>
+              <span class="li-count" id="feedbackCount">0</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+            <div class="list-row">
+              <span class="li-ic">&#128276;</span>
+              <span class="li-label">Custom Alerts</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+            <div class="list-row">
+              <span class="li-ic">&#128179;</span>
+              <span class="li-label">Payment Method(s)</span>
+              <span class="li-count">3</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+            <div class="list-row">
+              <span class="li-ic">&#128683;</span>
+              <span class="li-label">Blocked Users</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+            <div class="list-row">
+              <span class="li-ic">&#128065;</span>
+              <span class="li-label">Recently Viewed</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+            <div class="list-row">
+              <span class="li-ic">&#128279;</span>
+              <span class="li-label">Ad Sharing Code</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+          </div>
+
+          <div class="list-section hidden" id="profileListOthers">
+            <div class="list-row">
+              <span class="li-ic">&#9635;</span>
+              <span class="li-label">Activities</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+            <div class="list-row">
+              <span class="li-ic">&#10067;</span>
+              <span class="li-label">P2P Help Center</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+            <div class="list-row">
+              <span class="li-ic">&#8853;</span>
+              <span class="li-label">Add P2P To Home Screen</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+            <div class="list-row">
+              <span class="li-ic">&#128737;</span>
+              <span class="li-label">Become a Merchant</span>
+              <span class="li-chev">&#8250;</span>
+            </div>
+          </div>
+
+          <div class="wallet-card" id="walletCard" style="margin:20px 16px; border:1px solid var(--line); border-radius:12px; padding:14px 16px;"></div>
         </div>
 
       </div>
@@ -412,13 +528,14 @@
 /* ================= state ================= */
 const state = {
   users: {
-    you:{ name:'You', bot:false, usdt:{available:420, locked:0}, etb:832000 },
+    you:{ name:'ABFAST', bot:false, usdt:{available:420, locked:0}, etb:832000 },
     bob:{ name:'Bob', bot:true, usdt:{available:6000, locked:0}, etb:2368000 },
     carol:{ name:'Carol', bot:true, usdt:{available:7500, locked:0}, etb:1440000 },
     goro:{ name:'GoroXchange', bot:true, usdt:{available:12000, locked:0}, etb:4800000 },
   },
   currentUser:'you',
   currentTab:'p2p',
+  profileSubtab:'trade',
   side:'buy', // which side of the book we're browsing: buy = I want to buy USDT (shows sell ads), sell = I want to sell USDT (shows buy ads)
   ads:[
     {id:'ad-1', side:'sell', user:'bob', amount:500, price:160.50, method:'Telebirr', minUsd:8000, maxUsd:80000},
@@ -463,6 +580,13 @@ function setSide(side){
   document.getElementById('toggleBuy').classList.toggle('active', side==='buy');
   document.getElementById('toggleSell').classList.toggle('active', side==='sell');
   renderAdList();
+}
+function setProfileSubtab(tab){
+  state.profileSubtab = tab;
+  document.getElementById('subtabTrade').classList.toggle('active', tab==='trade');
+  document.getElementById('subtabOthers').classList.toggle('active', tab==='others');
+  document.getElementById('profileListTrade').classList.toggle('hidden', tab!=='trade');
+  document.getElementById('profileListOthers').classList.toggle('hidden', tab!=='others');
 }
 
 /* ================= render ================= */
@@ -536,6 +660,16 @@ function renderProfile(){
   const u = state.users[state.currentUser];
   document.getElementById('profAvatar').textContent = initials(u.name);
   document.getElementById('profName').textContent = u.name;
+
+  const trades30d = state.orders.filter(o=>
+    (o.buyer===state.currentUser||o.seller===state.currentUser) && o.status==='released'
+  ).length;
+  const total30d = state.orders.filter(o=>o.buyer===state.currentUser||o.seller===state.currentUser).length;
+  const rate = total30d ? (trades30d/total30d*100) : 0;
+  document.getElementById('statTrades').textContent = trades30d;
+  document.getElementById('statRate').textContent = rate.toFixed(2)+'%';
+  document.getElementById('feedbackCount').textContent = trades30d;
+
   document.getElementById('walletCard').innerHTML = `
     <div class="wallet-line"><span class="l">USDT available</span><span class="v">${fmtUSDT(u.usdt.available)}</span></div>
     <div class="wallet-line"><span class="l">USDT locked in escrow</span><span class="v locked">${fmtUSDT(u.usdt.locked)}</span></div>
