@@ -1,2268 +1,785 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AllP2P Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --bg-main: #13151b;
-            --bg-card: #1e2329;
-            --bg-input: #0b0e11;
-            --bg-note: #1a1e24;
-            --text-main: #ffffff;
-            --text-muted: #848e9c;
-            --accent-yellow: #fbd743;
-            --accent-green: #0ecb81;
-            --accent-red: #f04a5d;
-            --accent-blue: #29b6f6;
-            --btn-bg: #2b3139;
-            --warning-border: #8d6e16;
-            --warning-bg: #262115;
-            --icon-bg: #2b3139;
-            --border-green: #0ecb81;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            padding-bottom: 75px;
-        }
-
-        .view { display: none; }
-        .view.active { display: block; }
-
-        .bottom-nav {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background-color: var(--bg-main);
-            border-top: 1px solid var(--btn-bg);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            z-index: 1000;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-muted);
-            font-size: 10px;
-            gap: 4px;
-            cursor: pointer;
-            position: relative;
-        }
-        .nav-item.active { color: var(--accent-yellow); }
-        .nav-item i { font-size: 18px; }
-
-        .nav-icon-container {
-            position: relative;
-            display: inline-block;
-        }
-        .badge-count {
-            position: absolute;
-            top: -6px;
-            right: -10px;
-            background-color: var(--accent-red);
-            color: #ffffff;
-            font-size: 10px;
-            font-weight: bold;
-            height: 16px;
-            min-width: 16px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 4px;
-            box-sizing: border-box;
-        }
-
-        .header { padding: 16px; display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { margin: 0; font-size: 22px; font-weight: bold; }
-        .header p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); }
-        .info-icon { color: var(--text-muted); border: 1px solid var(--text-muted); border-radius: 50%; width: 20px; height: 20px; display: flex; justify-content: center; align-items: center; font-size: 12px; cursor: pointer; }
-
-        .toggle-container { display: flex; padding: 0 16px 16px 16px; gap: 10px; }
-        .home-toggle-btn { background-color: var(--btn-bg); color: var(--text-muted); border: none; padding: 8px 24px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
-        .home-toggle-btn.active-buy { background-color: var(--accent-green); color: white; }
-        .home-toggle-btn.active-sell { background-color: var(--accent-red); color: white; }
-
-        .order-list { padding: 0 16px; }
-        .card { background-color: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-        .user-info { display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 40px; height: 40px; background-color: var(--accent-yellow); color: black; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; position: relative; }
-        .online-dot { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; background-color: var(--accent-green); border: 2px solid var(--bg-card); border-radius: 50%; }
-        .user-details h3 { margin: 0; font-size: 15px; }
-        .user-stats { margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted); }
-        .user-stats i { color: var(--accent-yellow); font-size: 10px; }
-        
-        .action-btn { border: none; padding: 6px 18px; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; }
-        .action-btn.buy-bg { background-color: var(--accent-green); }
-        .action-btn.sell-bg { background-color: var(--accent-red); }
-
-        .card-details { display: flex; justify-content: space-between; font-size: 12px; }
-        .detail-col { display: flex; flex-direction: column; gap: 4px; }
-        .label { color: var(--text-muted); text-transform: uppercase; font-size: 10px; margin-bottom: 4px; }
-        .price-val { font-size: 18px; font-weight: bold; color: white; }
-        .limit-val { font-size: 13px; color: white; font-weight: 500; }
-        .payment-tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-        .tag { background-color: var(--btn-bg); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; font-size: 10px; }
-
-        .orders-container { padding: 16px; }
-        .orders-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-        .orders-header h1 { margin: 0; font-size: 22px; font-weight: bold; }
-        .orders-header p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); }
-        .refresh-btn { background-color: var(--btn-bg); color: var(--accent-yellow); border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 14px; }
-
-        .orders-toggle-bar { display: inline-flex; background-color: var(--bg-card); border-radius: 8px; padding: 4px; margin-bottom: 20px; }
-        .orders-toggle-btn { background: none; border: none; color: var(--text-muted); padding: 8px 20px; font-size: 13px; font-weight: 500; border-radius: 6px; cursor: pointer; }
-        .orders-toggle-btn.active { background-color: var(--accent-yellow); color: #000; font-weight: bold; }
-
-        .orders-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 40px; text-align: center; }
-        .orders-empty-icon { width: 80px; height: 80px; background-color: var(--bg-card); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 32px; margin-bottom: 24px; }
-        .orders-empty-title { font-size: 18px; font-weight: bold; margin: 0 0 8px 0; }
-        .orders-empty-sub { font-size: 13px; color: var(--text-muted); margin: 0 0 24px 0; max-width: 260px; line-height: 1.4; }
-        .btn-browse { background-color: var(--accent-yellow); color: #000; border: none; padding: 12px 32px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
-
-        .order-card-item { background-color: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--accent-yellow); }
-        .order-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .order-title { font-size: 14px; font-weight: bold; }
-        .order-status { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(251, 215, 67, 0.15); color: var(--accent-yellow); font-weight: bold; }
-        .order-status.approved { background: rgba(14, 203, 129, 0.15); color: var(--accent-green); }
-        .order-status.rejected { background: rgba(240, 74, 93, 0.15); color: var(--accent-red); }
-        .order-status.paid { background: rgba(41, 182, 246, 0.15); color: var(--accent-blue); }
-        .order-status.completed { background: rgba(14, 203, 129, 0.2); color: var(--accent-green); }
-
-        .approval-actions { display: flex; gap: 8px; margin-top: 12px; }
-        .btn-approve { flex: 1; background-color: var(--accent-green); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-reject { flex: 1; background-color: var(--accent-red); color: #fff; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-
-        .btn-pay-action {
-            display: none;
-            width: 100%;
-            background-color: var(--accent-green);
-            color: #000000;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 12px;
-            text-align: center;
-        }
-
-        .next-steps-card {
-            background-color: #181d23;
-            border: 1px solid var(--btn-bg);
-            border-radius: 10px;
-            padding: 14px;
-            margin-top: 12px;
-        }
-        .next-steps-title {
-            font-size: 13px;
-            font-weight: bold;
-            color: var(--accent-yellow);
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .next-steps-list {
-            margin: 0;
-            padding-left: 18px;
-            font-size: 12px;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-        .next-steps-list li { margin-bottom: 4px; }
-        .next-steps-list strong { color: #ffffff; }
-
-        .ads-container { padding: 16px; }
-        .ads-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-        .ads-header h1 { margin: 0; font-size: 22px; font-weight: bold; }
-        .ads-header p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); }
-        .btn-create-top { background-color: var(--accent-yellow); color: #000; border: none; padding: 8px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; }
-
-        .online-card { background-color: var(--bg-card); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .online-info { display: flex; align-items: center; gap: 10px; }
-        .green-dot { width: 8px; height: 8px; background-color: var(--accent-green); border-radius: 50%; }
-        .online-title { font-size: 14px; font-weight: bold; margin: 0; }
-        .online-sub { font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0; }
-
-        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--btn-bg); transition: .3s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--accent-green); }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        .filter-bar { display: flex; background-color: var(--bg-card); border-radius: 8px; padding: 4px; margin-bottom: 20px; }
-        .filter-btn { flex: 1; background: none; border: none; color: var(--text-muted); padding: 8px 0; font-size: 13px; font-weight: 500; border-radius: 6px; cursor: pointer; text-align: center; }
-        .filter-btn.active { background-color: var(--accent-yellow); color: #000; font-weight: bold; }
-        .filter-btn.accounts-btn { color: var(--accent-green); }
-
-        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px 0 30px 0; }
-        .empty-icon { width: 60px; height: 60px; background-color: var(--btn-bg); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 24px; margin-bottom: 16px; }
-        .empty-title { font-size: 16px; font-weight: bold; margin: 0 0 6px 0; }
-        .empty-sub { font-size: 12px; color: var(--text-muted); margin: 0 0 16px 0; }
-        .btn-create-center { background-color: var(--accent-yellow); color: #000; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
-
-        .note-card { background-color: var(--bg-note); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px; font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-top: 16px; }
-        .note-card strong { color: var(--accent-yellow); }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--bg-main);
-            z-index: 2000;
-            overflow-y: auto;
-            padding: 16px;
-        }
-        .modal-overlay.active { display: block; }
-
-        .back-nav {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-muted);
-            font-size: 14px;
-            cursor: pointer;
-            margin-bottom: 12px;
-        }
-
-        .form-card {
-            background-color: var(--bg-card);
-            border-radius: 16px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .form-section-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--text-main);
-            margin: 0 0 8px 0;
-        }
-
-        .ad-type-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .type-btn {
-            background-color: var(--bg-input);
-            border: 1px solid transparent;
-            border-radius: 12px;
-            padding: 16px 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            cursor: pointer;
-            color: var(--text-muted);
-            text-align: center;
-        }
-
-        .type-btn i { font-size: 16px; }
-        .type-btn .title { font-size: 13px; font-weight: bold; }
-        .type-btn .sub { font-size: 10px; opacity: 0.8; }
-
-        .type-btn.active-buy {
-            border-color: var(--accent-green);
-            background-color: rgba(14, 203, 129, 0.08);
-            color: var(--accent-green);
-        }
-
-        .type-btn.active-sell {
-            border-color: var(--accent-red);
-            background-color: rgba(240, 74, 93, 0.08);
-            color: var(--accent-red);
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .input-label {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .custom-input {
-            width: 100%;
-            background-color: var(--bg-input);
-            border: 1px solid #2b3139;
-            border-radius: 8px;
-            padding: 12px 14px;
-            color: #ffffff;
-            font-size: 14px;
-            outline: none;
-            box-sizing: border-box;
-        }
-        .custom-input:focus { border-color: var(--accent-yellow); }
-
-        .input-suffix {
-            position: absolute;
-            right: 14px;
-            font-size: 12px;
-            font-weight: bold;
-            color: var(--text-muted);
-        }
-
-        .input-hint {
-            font-size: 10px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
-        .limits-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .payment-options {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .payment-card-select {
-            background-color: var(--bg-input);
-            border: 1px solid transparent;
-            border-radius: 10px;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .payment-card-select.selected {
-            border-color: var(--accent-green);
-            background-color: rgba(14, 203, 129, 0.05);
-        }
-
-        .payment-card-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .payment-card-title { font-size: 13px; font-weight: bold; color: #fff; }
-        .payment-card-sub { font-size: 11px; color: var(--text-muted); }
-
-        .payment-card-check {
-            color: var(--accent-green);
-            font-size: 14px;
-        }
-
-        .form-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 10px;
-        }
-
-        .btn-cancel {
-            background-color: var(--btn-bg);
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .btn-submit {
-            background-color: var(--accent-yellow);
-            color: #000;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .trade-modal-section {
-            background-color: var(--bg-card);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-        }
-        .trade-modal-title {
-            font-size: 15px;
-            font-weight: bold;
-            color: #ffffff;
-            margin-bottom: 12px;
-        }
-        .pm-sub-hint {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 6px;
-        }
-        .currency-toggle-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            background-color: #181d23;
-            border-radius: 8px;
-            padding: 3px;
-            margin-bottom: 14px;
-        }
-        .currency-tab {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            padding: 8px 0;
-            font-size: 13px;
-            font-weight: 500;
-            border-radius: 6px;
-            cursor: pointer;
-            text-align: center;
-        }
-        .currency-tab.active {
-            background-color: var(--accent-green);
-            color: #ffffff;
-            font-weight: bold;
-        }
-        .trade-input-box {
-            position: relative;
-            background-color: #181d23;
-            border: 1px solid #363c4e;
-            border-radius: 8px;
-            padding: 10px 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .trade-input-box.error {
-            border-color: var(--accent-red);
-        }
-        .trade-input-box input {
-            background: transparent;
-            border: none;
-            outline: none;
-            color: #ffffff;
-            font-size: 16px;
-            width: 80%;
-        }
-        .trade-input-box .suffix {
-            color: var(--text-muted);
-            font-size: 13px;
-            font-weight: 500;
-        }
-        .trade-error-msg {
-            color: var(--accent-red);
-            font-size: 11px;
-            margin-top: 6px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .pay-summary-box {
-            background-color: #181d23;
-            border-radius: 8px;
-            padding: 14px;
-            margin-top: 14px;
-        }
-        .pay-summary-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-        .pay-summary-amount {
-            font-size: 22px;
-            font-weight: bold;
-            color: var(--accent-yellow);
-        }
-        .pay-summary-amount span {
-            font-size: 13px;
-            font-weight: normal;
-        }
-        .rate-info-text {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin: 14px 0 16px 0;
-        }
-        .btn-confirm-trade {
-            width: 100%;
-            background-color: #134633;
-            color: #2ee29b;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 15px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .btn-confirm-trade.enabled {
-            background-color: var(--accent-green);
-            color: #000000;
-        }
-        .trade-bullets {
-            margin-top: 16px;
-            padding-left: 16px;
-            color: var(--text-muted);
-            font-size: 12px;
-            line-height: 1.8;
-        }
-
-        .wallet-container { padding: 16px; }
-        .wallet-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-        .wallet-header h1 { margin: 0; font-size: 22px; font-weight: bold; }
-        .wallet-header p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); }
-
-        .warning-box { background-color: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 12px; line-height: 1.5; color: #d1d4dc; }
-        .warning-box i { color: var(--accent-yellow); margin-right: 4px; font-size: 14px; }
-        .warning-box strong { color: var(--accent-yellow); font-weight: bold; }
-
-        .total-balance-card { background-color: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-        .balance-label { font-size: 11px; color: var(--text-muted); }
-        .total-amount { font-size: 26px; font-weight: bold; margin: 6px 0 2px 0; }
-        .currency-sub { font-size: 11px; color: var(--text-muted); }
-
-        .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-        .balance-subcard { background-color: var(--bg-card); border-radius: 12px; padding: 12px; }
-        .subcard-header { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
-        .subcard-amount { font-size: 18px; font-weight: bold; }
-        .subcard-amount.green { color: var(--accent-green); }
-        .subcard-amount.yellow { color: var(--accent-yellow); }
-
-        .wallet-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .action-tile { border-radius: 12px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: none; font-weight: bold; font-size: 13px; }
-        .action-tile.deposit { background-color: var(--accent-green); color: #000; }
-        .action-tile.withdraw { background-color: var(--accent-yellow); color: #000; }
-        .action-tile.history { background-color: var(--bg-card); color: #ffffff; }
-        .action-tile i { font-size: 18px; }
-        .action-tile.history i { color: var(--accent-yellow); border: 1px solid var(--accent-yellow); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-
-        .bonus-card { background-color: #171622; border: 1px solid rgba(138, 43, 226, 0.2); border-radius: 12px; padding: 16px; }
-        .bonus-header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
-        .bonus-icon { width: 32px; height: 32px; background-color: rgba(138, 43, 226, 0.2); border-radius: 8px; color: #a855f7; display: flex; justify-content: center; align-items: center; font-size: 16px; }
-        .bonus-title h3 { margin: 0; font-size: 14px; color: #fff; }
-        .bonus-title p { margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted); }
-        .bonus-balance { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px; }
-        .bonus-val { font-size: 18px; font-weight: bold; color: #a855f7; }
-
-        .more-container { padding: 16px; }
-        .more-header { margin-bottom: 20px; }
-        .more-header h1 { margin: 0; font-size: 22px; font-weight: bold; }
-        .more-header p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); }
-
-        .menu-list { display: flex; flex-direction: column; gap: 12px; }
-        .menu-item {
-            background-color: var(--bg-card);
-            border-radius: 12px;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .menu-item:active { background-color: var(--btn-bg); }
-
-        .menu-icon-bg {
-            width: 44px;
-            height: 44px;
-            background-color: var(--icon-bg);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 18px;
-            color: var(--text-muted);
-            flex-shrink: 0;
-        }
-        .menu-icon-bg.yellow-icon { color: var(--accent-yellow); }
-        .menu-icon-bg.red-icon { color: var(--accent-red); }
-
-        .menu-text { display: flex; flex-direction: column; gap: 2px; }
-        .menu-title { font-size: 15px; font-weight: bold; color: #ffffff; }
-        .menu-sub { font-size: 12px; color: var(--text-muted); }
-
-        .profile-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-        .profile-avatar { width: 48px; height: 48px; border-radius: 50%; background-color: var(--accent-yellow); color: #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; }
-        .profile-user-title { font-size: 18px; font-weight: 700; }
-        .profile-username { color: var(--text-muted); font-size: 13px; }
-        .profile-card { background-color: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
-        .profile-card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #ffffff; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .stat-box { background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 12px 4px; text-align: center; }
-        .stat-val { font-size: 18px; font-weight: bold; }
-        .stat-val.green { color: var(--accent-green); }
-        .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-
-        .badge-container { display: flex; gap: 8px; }
-        .badge { font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; }
-        .badge-green { background: rgba(14, 203, 129, 0.15); color: var(--accent-green); }
-        .badge-blue { background: rgba(41, 182, 246, 0.15); color: var(--accent-blue); }
-
-        .referral-card { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-        .referral-left { display: flex; align-items: center; gap: 12px; }
-        .referral-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(251, 215, 67, 0.15); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--accent-yellow); }
-        .referral-title { font-size: 14px; font-weight: 600; }
-        .referral-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 13px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { color: var(--text-muted); }
-        .info-val { display: flex; align-items: center; gap: 6px; font-weight: 500; color: #ffffff; }
-        .edit-icon { color: var(--text-muted); font-size: 12px; cursor: pointer; }
-        .warning-text { color: var(--accent-yellow); font-size: 11px; text-align: right; margin-top: 2px; }
-        .security-btn { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 12px; font-size: 13px; cursor: pointer; }
-
-        .pm-modal-card {
-            background-color: #1a1e26;
-            border-radius: 16px;
-            padding: 20px;
-            position: relative;
-            margin-top: 10px;
-        }
-
-        .pm-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .pm-modal-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #ffffff;
-        }
-
-        .pm-close-btn {
-            color: var(--text-muted);
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        .pm-field {
-            margin-bottom: 16px;
-        }
-
-        .pm-label {
-            font-size: 13px;
-            color: #ffffff;
-            margin-bottom: 8px;
-            display: block;
-            font-weight: 500;
-        }
-
-        .pm-label span { color: var(--accent-yellow); }
-
-        .pm-select, .pm-input {
-            width: 100%;
-            background-color: #0d0f12;
-            border: 1px solid #232730;
-            border-radius: 8px;
-            padding: 14px;
-            color: #ffffff;
-            font-size: 14px;
-            outline: none;
-            box-sizing: border-box;
-        }
-
-        .pm-input-disabled {
-            background-color: #12151c;
-            color: #d1d4dc;
-            border-color: #1d212a;
-        }
-
-        .pm-subtext {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 6px;
-        }
-
-        .pm-btn-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 24px;
-        }
-
-        .pm-btn-cancel {
-            background-color: #2b313a;
-            color: #ffffff;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .pm-btn-save {
-            background-color: var(--accent-yellow);
-            color: #000000;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .pm-account-card {
-            background-color: var(--bg-card);
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .pm-acc-info h4 { margin: 0; font-size: 14px; color: #fff; }
-        .pm-acc-info p { margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted); }
-        .pm-delete-btn { color: var(--accent-red); cursor: pointer; font-size: 14px; padding: 6px; }
-
-        .guide-section {
-            background-color: var(--bg-card);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 14px;
-        }
-        .guide-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--accent-yellow);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .guide-list {
-            list-style: none;
-            padding-left: 0;
-            margin: 0;
-        }
-        .guide-list li {
-            position: relative;
-            padding-left: 18px;
-            font-size: 13px;
-            color: #d1d4dc;
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-        .guide-list li:last-child {
-            margin-bottom: 0;
-        }
-        .guide-list li::before {
-            content: "•";
-            position: absolute;
-            left: 4px;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P2P — Escrow Trading</title>
+<style>
+  :root{
+    --yellow:#F0B90B;
+    --black:#1E2329;
+    --gray:#707A8A;
+    --gray-light:#9CA3AE;
+    --line:#EAECEF;
+    --bg:#F5F5F5;
+    --card:#FFFFFF;
+    --green:#0ECB81;
+    --green-dark:#02A96B;
+    --red:#F6465D;
+    --blue:#3375BB;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{
+    background:#E4E7EB;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    color:var(--black);
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+    padding:18px 10px 40px;
+  }
+
+  /* ---- dev toolbar (outside the app skin, for demoing multiple users) ---- */
+  .devbar{
+    width:100%; max-width:412px; display:flex; align-items:center; justify-content:space-between;
+    background:#22262B; color:#C6CBD2; border-radius:10px; padding:9px 14px; margin-bottom:12px;
+    font-size:12px;
+  }
+  .devbar .grp{display:flex; align-items:center; gap:8px;}
+  .devbar select{
+    background:#2E333A; color:#fff; border:1px solid #3A4048; border-radius:5px; padding:5px 8px; font-size:12px;
+  }
+  .devbar button{
+    background:transparent; color:#C6CBD2; border:1px solid #3A4048; border-radius:5px; padding:5px 10px; font-size:11px; cursor:pointer;
+  }
+
+  /* ---- phone frame ---- */
+  .phone{
+    width:100%; max-width:412px; background:#000; border-radius:34px; padding:10px;
+    box-shadow:0 20px 50px rgba(0,0,0,.35);
+  }
+  .screen-wrap{
+    background:var(--bg); border-radius:24px; overflow:hidden; position:relative;
+    min-height:780px; display:flex; flex-direction:column;
+  }
+  .statusbar{
+    background:#000; color:#fff; font-size:12px; font-weight:600;
+    display:flex; justify-content:space-between; align-items:center; padding:8px 20px 6px;
+  }
+  .statusbar .icons{display:flex; gap:5px; align-items:center; font-size:11px; opacity:.9;}
+
+  .app{flex:1; background:#fff; display:flex; flex-direction:column; min-height:0;}
+  .screen{flex:1; overflow-y:auto; padding-bottom:10px;}
+  .screen.hidden{display:none;}
+
+  /* ---- top nav tabs ---- */
+  .topnav{
+    display:flex; align-items:center; gap:20px; padding:14px 16px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  .topnav .back{font-size:18px; color:var(--black);}
+  .topnav .tab{font-size:14.5px; color:var(--gray-light); font-weight:500;}
+  .topnav .tab.active{color:var(--black); font-weight:700;}
+
+  /* ---- promo banner ---- */
+  .banner{
+    margin:12px 16px 10px; background:linear-gradient(135deg,#181A20,#20242C);
+    border-radius:14px; padding:16px 18px; position:relative; overflow:hidden;
+  }
+  .banner .brand{display:flex; align-items:center; gap:6px; color:var(--yellow); font-size:11px; font-weight:700; letter-spacing:.5px; margin-bottom:8px;}
+  .banner h2{color:var(--yellow); font-size:19px; line-height:1.25; font-weight:800; letter-spacing:.3px;}
+  .banner p{color:#9CA3AE; font-size:11px; margin-top:6px; max-width:70%;}
+  .banner .cta{
+    display:inline-block; margin-top:10px; background:var(--yellow); color:#000; font-size:11px; font-weight:700;
+    padding:6px 12px; border-radius:14px;
+  }
+  .banner .ring{
+    position:absolute; right:-10px; top:10px; width:90px; height:90px; border:2px solid rgba(240,185,11,.4); border-radius:50%;
+  }
+  .banner .ring::after{content:''; position:absolute; inset:14px; border:2px solid rgba(240,185,11,.6); border-radius:50%;}
+
+  /* ---- buy/sell toggle + currency ---- */
+  .controls-row{display:flex; align-items:center; justify-content:space-between; padding:10px 16px 6px;}
+  .side-toggle{display:flex; background:#F5F5F5; border-radius:20px; padding:3px;}
+  .side-toggle button{
+    border:none; background:transparent; padding:7px 20px; border-radius:18px; font-size:13.5px; font-weight:700; color:var(--gray); cursor:pointer;
+  }
+  .side-toggle button.active{background:var(--black); color:#fff;}
+  .side-toggle button.active.sell-active{background:var(--black);}
+  .currency-pill{
+    border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:12.5px; font-weight:600; color:var(--black); display:flex; align-items:center; gap:4px;
+  }
+
+  .filter-row{display:flex; align-items:center; gap:14px; padding:8px 16px 12px; border-bottom:8px solid #FAFAFA;}
+  .filter-row .f{display:flex; align-items:center; gap:3px; font-size:13px; font-weight:600; color:var(--black);}
+  .filter-row .f small{color:var(--gray); font-weight:500;}
+  .filter-row .spacer{flex:1;}
+
+  .section-label{padding:12px 16px 6px; font-size:15px; font-weight:800; color:var(--black);}
+
+  /* ---- ad card ---- */
+  .ad-card{padding:14px 16px; border-bottom:1px solid var(--line); position:relative;}
+  .ad-head{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .avatar{
+    width:26px; height:26px; border-radius:50%; background:var(--black); color:#fff; font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .ad-uname{font-size:13.5px; font-weight:700; color:var(--black);}
+  .badge{font-size:10px;}
+  .ad-stats{font-size:11px; color:var(--gray); margin-bottom:8px; display:flex; gap:5px; align-items:center;}
+  .ad-body{display:flex; justify-content:space-between; align-items:flex-end; gap:10px;}
+  .ad-price{font-size:22px; font-weight:800; color:var(--black); line-height:1;}
+  .ad-price small{font-size:12px; font-weight:600; color:var(--gray);}
+  .ad-limits{font-size:11.5px; color:var(--gray); margin-top:6px;}
+  .ad-limits b{color:var(--black); font-weight:600;}
+  .ad-right{text-align:right; flex-shrink:0;}
+  .pay-tag{font-size:11px; color:var(--black); display:flex; align-items:center; justify-content:flex-end; gap:5px; margin-bottom:3px;}
+  .pay-dot{width:6px; height:6px; border-radius:50%; display:inline-block;}
+  .dot-green{background:var(--green);} .dot-blue{background:var(--blue);} .dot-yellow{background:var(--yellow);}
+  .ad-timer{font-size:10.5px; color:var(--gray-light); margin:5px 0 8px; display:flex; align-items:center; justify-content:flex-end; gap:3px;}
+  .trade-btn{
+    border:none; border-radius:6px; padding:9px 22px; font-size:13px; font-weight:700; color:#fff; cursor:pointer;
+  }
+  .trade-btn.buy{background:var(--green);}
+  .trade-btn.sell{background:var(--red);}
+  .empty-state{padding:60px 20px; text-align:center; color:var(--gray-light); font-size:13px;}
+
+  /* ---- orders tab ---- */
+  .order-row{padding:14px 16px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .order-row-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;}
+  .order-row-title{font-size:13.5px; font-weight:700;}
+  .chip{font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:10px;}
+  .chip.escrow{background:#FFF6DE; color:#A87900;}
+  .chip.payment_sent{background:#E7F0FC; color:var(--blue);}
+  .chip.released{background:#E3FBF1; color:var(--green-dark);}
+  .chip.disputed{background:#FDE8EA; color:var(--red);}
+  .chip.cancelled{background:#F0F0F0; color:var(--gray);}
+  .order-row-sub{font-size:12px; color:var(--gray);}
+  .order-row-timer{font-size:11px; color:var(--red); margin-top:4px; font-weight:600;}
+
+  /* ---- ads (my ads) tab ---- */
+  .post-box{margin:14px 16px; border:1px solid var(--line); border-radius:12px; padding:14px;}
+  .post-box h3{font-size:13.5px; margin-bottom:10px;}
+  .form-row{display:flex; gap:8px; margin-bottom:8px;}
+  .form-row .field{flex:1; display:flex; flex-direction:column; gap:4px;}
+  .form-row label{font-size:10.5px; color:var(--gray); font-weight:600;}
+  .form-row select, .form-row input{
+    border:1px solid var(--line); border-radius:7px; padding:8px 9px; font-size:12.5px; color:var(--black); font-family:inherit;
+  }
+  .post-submit{
+    width:100%; background:var(--yellow); border:none; border-radius:8px; padding:10px; font-size:13px; font-weight:700; color:#000; margin-top:4px; cursor:pointer;
+  }
+  .myad-row{margin:0 16px 10px; border:1px solid var(--line); border-radius:10px; padding:12px;}
+  .myad-top{display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:700;}
+  .myad-sub{font-size:11.5px; color:var(--gray); margin-top:4px;}
+  .myad-cancel{font-size:11px; color:var(--red); font-weight:700; margin-top:8px; display:inline-block; cursor:pointer;}
+
+  /* ---- profile tab ---- */
+  .profile-head{padding:22px 16px 10px; display:flex; align-items:center; gap:12px;}
+  .profile-avatar{width:52px; height:52px; border-radius:50%; background:var(--black); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px;}
+  .profile-name{font-size:16px; font-weight:800;}
+  .profile-sub{font-size:11.5px; color:var(--gray);}
+  .wallet-card{margin:14px 16px; border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
+  .wallet-line{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13px;}
+  .wallet-line:last-child{border-bottom:none;}
+  .wallet-line .l{color:var(--gray);}
+  .wallet-line .v{font-weight:700;}
+  .v.locked{color:var(--yellow); background:#1E2329; padding:2px 8px; border-radius:6px;}
+
+  /* ---- bottom tab bar ---- */
+  .tabbar{display:flex; border-top:1px solid var(--line); background:#fff;}
+  .tabbar button{
+    flex:1; border:none; background:transparent; padding:8px 0 10px; display:flex; flex-direction:column; align-items:center; gap:3px;
+    color:var(--gray-light); font-size:10px; cursor:pointer;
+  }
+  .tabbar button.active{color:var(--black); font-weight:700;}
+  .tabbar svg{width:20px; height:20px;}
+
+  /* ---- trade modal (bottom sheet) ---- */
+  .modal-overlay{
+    position:absolute; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:flex-end; z-index:20;
+  }
+  .modal-overlay.hidden{display:none;}
+  .sheet{
+    background:#fff; width:100%; max-height:92%; border-radius:18px 18px 0 0; overflow-y:auto;
+    animation:slideup .22s ease-out;
+  }
+  @keyframes slideup{from{transform:translateY(30px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+  .sheet-head{
+    display:flex; align-items:center; justify-content:space-between; padding:16px 16px 12px; border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:#fff;
+  }
+  .sheet-head h3{font-size:15.5px; font-weight:800;}
+  .sheet-close{font-size:20px; color:var(--gray); cursor:pointer; line-height:1;}
+  .sheet-body{padding:16px;}
+
+  .trade-summary{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .trade-summary .who{font-size:13px; color:var(--gray);}
+  .trade-summary .price{font-size:20px; font-weight:800;}
+
+  .amount-input-row{border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+  .amount-input-row input{border:none; font-size:16px; font-weight:700; width:60%; font-family:inherit;}
+  .amount-input-row input:focus{outline:none;}
+  .amount-unit{color:var(--gray); font-size:13px; font-weight:600;}
+  .limit-hint{font-size:11px; color:var(--gray-light); margin-bottom:16px;}
+  .total-row{display:flex; justify-content:space-between; font-size:13.5px; padding:10px 0; border-top:1px dashed var(--line); margin-top:8px;}
+  .total-row b{font-size:15px;}
+
+  .place-btn{
+    width:100%; border:none; border-radius:10px; padding:13px; font-size:14.5px; font-weight:800; color:#fff; margin-top:16px; cursor:pointer;
+  }
+  .place-btn.buy{background:var(--green);}
+  .place-btn.sell{background:var(--red);}
+
+  /* order detail inside modal */
+  .timer-banner{
+    background:#FFF8E6; border:1px solid #FCE9B6; border-radius:10px; padding:12px 14px; margin-bottom:16px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .timer-banner.urgent{background:#FDECEE; border-color:#F8C3CA;}
+  .timer-banner .label{font-size:12px; color:var(--gray);}
+  .timer-banner .clock{font-size:18px; font-weight:800; color:var(--yellow);}
+  .timer-banner.urgent .clock{color:var(--red);}
+
+  .steps{display:flex; justify-content:space-between; margin-bottom:20px; position:relative;}
+  .steps::before{content:''; position:absolute; top:8px; left:5%; right:5%; height:2px; background:var(--line); z-index:0;}
+  .step2{display:flex; flex-direction:column; align-items:center; gap:6px; z-index:1; width:25%;}
+  .step2 .d{width:16px; height:16px; border-radius:50%; background:#fff; border:2px solid var(--line);}
+  .step2.done .d{background:var(--green); border-color:var(--green);}
+  .step2.active .d{border-color:var(--yellow); box-shadow:0 0 0 3px rgba(240,185,11,.25);}
+  .step2 .lab{font-size:9.5px; text-align:center; color:var(--gray-light); font-weight:600;}
+  .step2.done .lab, .step2.active .lab{color:var(--black);}
+
+  .info-box{border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:14px;}
+  .info-box .row{display:flex; justify-content:space-between; font-size:13px; padding:5px 0;}
+  .info-box .row .l{color:var(--gray);}
+  .info-box .row .v{font-weight:700;}
+
+  .action-btn{width:100%; border:none; border-radius:10px; padding:13px; font-size:14px; font-weight:800; margin-top:10px; cursor:pointer;}
+  .action-btn.primary{background:var(--yellow); color:#000;}
+  .action-btn.green{background:var(--green); color:#fff;}
+  .action-btn.outline{background:#fff; border:1px solid var(--line); color:var(--black);}
+  .action-btn.danger-outline{background:#fff; border:1px solid var(--red); color:var(--red);}
+
+  .log2{margin-top:16px; border-top:1px solid var(--line); padding-top:10px;}
+  .log2 div{font-size:11px; color:var(--gray); padding:3px 0;}
+  .log2 .t{color:var(--gray-light); margin-right:6px;}
+</style>
 </head>
 <body>
 
-    <!-- HOME VIEW -->
-    <div id="home" class="view active">
-        <div class="header">
-            <div>
-                <h1>AllP2P</h1>
-                <p>Trade USDT with local currency</p>
-            </div>
-            <div class="info-icon" onclick="openHowToUseModal()">i</div>
-        </div>
-
-        <div class="toggle-container">
-            <button id="buyToggleBtn" class="home-toggle-btn" onclick="setHomeMarketMode('buy')">Buy</button>
-            <button id="sellToggleBtn" class="home-toggle-btn active-sell" onclick="setHomeMarketMode('sell')">Sell</button>
-        </div>
-
-        <div class="order-list">
-            <div id="buyMarketList" style="display: none;"></div>
-            <div id="sellMarketList"></div>
-        </div>
+  <div class="devbar">
+    <div class="grp">
+      <span>Acting as</span>
+      <select id="userSelect"></select>
     </div>
+    <button id="resetBtn">Reset demo</button>
+  </div>
 
-    <!-- ORDERS VIEW -->
-    <div id="orders" class="view">
-        <div class="orders-container">
-            <div class="orders-header">
-                <div>
-                    <h1>My Orders</h1>
-                    <p>Track your trade activity</p>
-                </div>
-                <button class="refresh-btn" onclick="renderOngoingOrders()"><i class="fa-solid fa-rotate-right"></i></button>
+  <div class="phone">
+    <div class="screen-wrap">
+      <div class="statusbar">
+        <span>9:41</span>
+        <span class="icons">●●● 5G 100%</span>
+      </div>
+      <div class="app">
+
+        <!-- ============ P2P TAB ============ -->
+        <div class="screen" id="screen-p2p">
+          <div class="topnav">
+            <span class="back">&#8592;</span>
+            <span class="tab">Express</span>
+            <span class="tab active">P2P</span>
+            <span class="tab">Block Trade</span>
+          </div>
+
+          <div class="banner">
+            <div class="ring"></div>
+            <div class="brand">&#9670; VAULT · ZERO FEE</div>
+            <h2>TRUSTED<br>P2P ESCROW</h2>
+            <p>Every trade is protected by locked escrow until both sides confirm.</p>
+            <span class="cta">How escrow works</span>
+          </div>
+
+          <div class="controls-row">
+            <div class="side-toggle">
+              <button id="toggleBuy" class="active" onclick="setSide('buy')">Buy</button>
+              <button id="toggleSell" onclick="setSide('sell')">Sell</button>
             </div>
+            <div class="currency-pill">USD &#9662;</div>
+          </div>
 
-            <div class="orders-toggle-bar">
-                <button id="ongoingBtn" class="orders-toggle-btn active" onclick="setOrderTab('ongoing')">Ongoing</button>
-                <button id="completedBtn" class="orders-toggle-btn" onclick="setOrderTab('completed')">Completed</button>
-            </div>
+          <div class="filter-row">
+            <div class="f">BTC <small>&#9662;</small></div>
+            <div class="f">Amount <small>&#9662;</small></div>
+            <div class="f">Payment <small>&#9662;</small></div>
+            <div class="spacer"></div>
+            <div class="f">&#9776;</div>
+          </div>
 
-            <div id="ongoingOrdersList"></div>
-
-            <div id="completedOrdersList" style="display: none;">
-                <div id="completedOrdersContainer"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ADS VIEW -->
-    <div id="ads" class="view">
-        <div class="ads-container">
-            <div class="ads-header">
-                <div>
-                    <h1>My Ads</h1>
-                    <p>Manage your buy and sell offers</p>
-                </div>
-                <button class="btn-create-top" onclick="createNewAd()">Create</button>
-            </div>
-
-            <div class="online-card">
-                <div class="online-info">
-                    <div class="green-dot"></div>
-                    <div>
-                        <p class="online-title">Keep Me Online</p>
-                        <p class="online-sub">Always visible to traders</p>
-                    </div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" checked id="keepOnlineToggle" onchange="toggleOnlineStatus()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-
-            <div class="filter-bar">
-                <button class="filter-btn active" onclick="filterAds('all', this)">All</button>
-                <button class="filter-btn" onclick="filterAds('buy', this)">Buy</button>
-                <button class="filter-btn" onclick="filterAds('sell', this)">Sell</button>
-                <button class="filter-btn accounts-btn" onclick="filterAds('accounts', this)">Accounts</button>
-            </div>
-
-            <div id="myAdsList"></div>
-
-            <div id="myAdsEmptyState" class="empty-state">
-                <div class="empty-icon"><i class="fa-solid fa-chart-line"></i></div>
-                <p class="empty-title">No Ads Yet</p>
-                <p class="empty-sub">Create your first ad to start trading</p>
-                <button class="btn-create-center" onclick="createNewAd()">Create Your First Ad</button>
-            </div>
-
-            <div class="note-card">
-                <strong>Note:</strong> You can create a maximum of 1 Buy ad and 1 Sell ad. Multiple ads of the same type are not allowed.
-            </div>
-        </div>
-    </div>
-
-    <!-- BUY USDT ORDER MODAL -->
-    <div id="buyOrderModal" class="modal-overlay">
-        <div class="back-nav" onclick="closeBuyOrderModal()">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Back to Offers</span>
+          <div class="section-label">Open offers</div>
+          <div id="adList"></div>
         </div>
 
-        <div class="trade-modal-section">
-            <div class="trade-modal-title">Select Payment Method</div>
-            <div class="payment-options" id="tradePaymentSelectionGroup"></div>
-            <div class="pm-sub-hint">Payment details will be shared after order confirmation</div>
+        <!-- ============ ORDERS TAB ============ -->
+        <div class="screen hidden" id="screen-orders">
+          <div class="topnav"><span class="tab active" style="color:#1E2329;font-weight:800;">Order History</span></div>
+          <div id="orderList"></div>
         </div>
 
-        <div class="trade-modal-section">
-            <div class="trade-modal-title" id="tradeModalTitleText">Buy USDT</div>
-            
-            <div class="currency-toggle-group">
-                <button id="currTabUSD" class="currency-tab active" onclick="setBuyCurrency('USD')">USD</button>
-                <button id="currTabETB" class="currency-tab" onclick="setBuyCurrency('ETB')">ETB</button>
-            </div>
+        <!-- ============ ADS (MY ADS) TAB ============ -->
+        <div class="screen hidden" id="screen-ads">
+          <div class="topnav"><span class="tab active" style="color:#1E2329;font-weight:800;">My Ads</span></div>
 
-            <div class="input-group">
-                <div class="input-label" style="margin-bottom: 4px;">Amount</div>
-                <div class="trade-input-box" id="tradeInputBox">
-                    <input type="number" id="tradeInputAmount" value="18" oninput="calculateTrade()">
-                    <span class="suffix" id="tradeInputSuffix">USD</span>
-                </div>
-                <div class="trade-error-msg" id="tradeMinError">
-                    <i class="fa-regular fa-circle-exclamation"></i>
-                    <span id="tradeMinErrorText">Amount must be at least $19.63 USDT</span>
-                </div>
-            </div>
-
-            <div class="pay-summary-box">
-                <div class="pay-summary-label" id="tradeSummaryLabel">You will pay</div>
-                <div class="pay-summary-amount" id="tradeCalculatedPay">3384.00 <span>ETB</span></div>
-            </div>
-
-            <div class="rate-info-text" id="tradeRateInfo">Rate: 1 USD = 188.00 ETB</div>
-
-            <button id="tradeSubmitBtn" class="btn-confirm-trade" onclick="confirmBuyTrade()">Buy USDT</button>
-
-            <ul class="trade-bullets">
-                <li id="tradeBulletCounterpart">Request will be sent to <span id="tradeSellerUsername" style="color:#fff; font-weight:bold;">Azuz</span> for approval/rejection</li>
-                <li>They have 5 minutes to respond</li>
-                <li>You'll be notified once accepted</li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- CREATE NEW AD MODAL -->
-    <div id="createAdModal" class="modal-overlay">
-        <div class="back-nav" onclick="closeCreateAd()">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Back to My Ads</span>
-        </div>
-        
-        <h1 style="font-size: 20px; margin: 0 0 16px 0;">Create New Ad</h1>
-
-        <div class="form-card">
-            <div>
-                <div class="form-section-title">Ad Type</div>
-                <div class="ad-type-grid">
-                    <div id="typeBuyBtn" class="type-btn active-buy" onclick="selectAdType('buy')">
-                        <i class="fa-solid fa-arrow-trend-up"></i>
-                        <span class="title">I want to buy</span>
-                        <span class="sub">USDT with ETB</span>
-                    </div>
-                    <div id="typeSellBtn" class="type-btn" onclick="selectAdType('sell')">
-                        <i class="fa-solid fa-arrow-trend-down"></i>
-                        <span class="title">I want to sell</span>
-                        <span class="sub">USDT for ETB</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <div class="form-section-title" style="margin-bottom:0;">Pricing</div>
-                <div class="input-label">Price per USDT (ETB)</div>
-                <div class="input-wrapper">
-                    <input type="number" id="adPrice" class="custom-input" value="188.00" step="0.01">
-                    <span class="input-suffix">ETB</span>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <div class="form-section-title" style="margin-bottom:0;">Total Amount</div>
-                <div class="input-label">Amount (USDT)</div>
-                <div class="input-wrapper">
-                    <input type="number" id="adAmount" class="custom-input" value="100.00" step="1">
-                </div>
-            </div>
-
-            <div class="input-group">
-                <div class="form-section-title" style="margin-bottom:0;">Order Limits</div>
-                <div class="limits-grid">
-                    <div>
-                        <div class="input-label">Min (ETB)</div>
-                        <input type="number" id="adMin" class="custom-input" value="200">
-                    </div>
-                    <div>
-                        <div class="input-label">Max (ETB)</div>
-                        <input type="number" id="adMax" class="custom-input" value="5000">
-                    </div>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <div class="form-section-title" style="margin-bottom:4px;">Select Payment Methods</div>
-                <div class="payment-options" id="adPaymentOptionsContainer"></div>
-                <div class="input-hint" style="margin-top:4px;">Click 'Payment Accounts' in 'More' tab to add more methods.</div>
-            </div>
-
-            <div class="input-group">
-                <div class="form-section-title" style="margin-bottom:0;">Terms (Optional)</div>
-                <textarea id="adTerms" class="custom-input" style="height: 70px; resize: none;" placeholder="Enter any special terms..."></textarea>
-            </div>
-
-            <div class="form-actions">
-                <button class="btn-cancel" onclick="closeCreateAd()">Cancel</button>
-                <button class="btn-submit" onclick="submitNewAd()">Create Ad</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- WALLET VIEW -->
-    <div id="wallet" class="view">
-        <div class="wallet-container">
-            <div class="wallet-header">
-                <div>
-                    <h1>Wallet</h1>
-                    <p>Manage your funds</p>
-                </div>
-                <button class="refresh-btn" onclick="refreshWallet()"><i class="fa-solid fa-rotate-right"></i></button>
-            </div>
-
-            <div class="warning-box">
-                <i class="fa-solid fa-triangle-exclamation"></i> <strong>IMPORTANT:</strong> We support USDT on <strong>Solana (SPL)</strong> and <strong>BNB Smart Chain (BEP20)</strong>. Always pick the correct network before depositing or withdrawing, and only send USDT on the network you selected. Sending on the wrong network can cause permanent loss of funds.
-            </div>
-
-            <div class="total-balance-card">
-                <div class="balance-label">Total Balance</div>
-                <div class="total-amount" id="totalBalance">$0.00</div>
-                <div class="currency-sub">USDT</div>
-            </div>
-
-            <div class="balance-grid">
-                <div class="balance-subcard">
-                    <div class="subcard-header">
-                        <i class="fa-regular fa-circle-down" style="color:var(--accent-green)"></i>
-                        <span>Available</span>
-                    </div>
-                    <div class="subcard-amount green" id="availBalance">$0.00</div>
-                    <div class="currency-sub">USDT</div>
-                </div>
-                <div class="balance-subcard">
-                    <div class="subcard-header">
-                        <i class="fa-regular fa-clock" style="color:var(--accent-yellow)"></i>
-                        <span>In Escrow</span>
-                    </div>
-                    <div class="subcard-amount yellow" id="escrowBalance">$0.00</div>
-                    <div class="currency-sub">USDT</div>
-                </div>
-            </div>
-
-            <div class="wallet-actions">
-                <button class="action-tile deposit" onclick="handleDeposit()">
-                    <i class="fa-solid fa-download"></i>
-                    <span>Deposit</span>
-                </button>
-                <button class="action-tile withdraw" onclick="handleWithdraw()">
-                    <i class="fa-solid fa-upload"></i>
-                    <span>Withdraw</span>
-                </button>
-                <button class="action-tile history" onclick="handleHistory()">
-                    <i class="fa-solid fa-rotate-left"></i>
-                    <span>History</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- DEPOSIT NETWORK SELECTION MODAL -->
-    <div id="depositModal" class="modal-overlay" style="background-color: var(--bg-main);">
-        <div class="header" style="padding: 16px 0; display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="back-nav" style="margin-bottom: 0;" onclick="closeDepositModal()">
-                    <i class="fa-solid fa-arrow-left" style="font-size: 18px; color: #fff;"></i>
-                </div>
-                <div>
-                    <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #fff;">Deposit</h1>
-                    <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">Choose a network to deposit</p>
-                </div>
-            </div>
-            <button class="refresh-btn" style="width: 32px; height: 32px; font-size: 12px;" onclick="refreshDeposit()"><i class="fa-solid fa-rotate-right"></i></button>
-        </div>
-
-        <div style="margin-top: 12px; background-color: var(--bg-card); border-radius: 16px; padding: 20px;">
-            <h2 style="font-size: 18px; font-weight: bold; color: #fff; margin: 0 0 8px 0;">Select Network</h2>
-            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0 0 20px 0;">
-                Choose the network to receive your USDT. Both networks share the same USDT balance.
-            </p>
-
-            <div onclick="selectDepositNetwork('Solana (SPL)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.2s;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 40px; height: 40px; background-color: rgba(251, 215, 67, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-yellow); font-weight: bold; font-size: 12px;">SOL</div>
-                        <div>
-                            <div style="font-size: 15px; font-weight: bold; color: #fff;">Solana <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(SPL)</span></div>
-                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">USDT on Solana</div>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 13px;"></i>
-                </div>
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--accent-yellow); line-height: 1.4;">
-                    <i class="fa-solid fa-triangle-exclamation" style="margin-top: 1px;"></i>
-                    <span>Only send USDT on the Solana (SPL) network to this address.</span>
-                </div>
-            </div>
-
-            <div onclick="selectDepositNetwork('BSC (BEP20)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 0.2s;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 40px; height: 40px; background-color: rgba(251, 215, 67, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-yellow); font-weight: bold; font-size: 11px;">BSC</div>
-                        <div>
-                            <div style="font-size: 15px; font-weight: bold; color: #fff;">BSC <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(BEP20)</span></div>
-                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">USDT on BSC</div>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 13px;"></i>
-                </div>
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--accent-yellow); line-height: 1.4;">
-                    <i class="fa-solid fa-triangle-exclamation" style="margin-top: 1px;"></i>
-                    <span>Only send USDT on the BNB Smart Chain (BEP20) network to this address.</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- WITHDRAW NETWORK SELECTION MODAL -->
-    <div id="withdrawModal" class="modal-overlay" style="background-color: var(--bg-main);">
-        <div class="header" style="padding: 16px 0; display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="back-nav" style="margin-bottom: 0;" onclick="closeWithdrawModal()">
-                    <i class="fa-solid fa-arrow-left" style="font-size: 18px; color: #fff;"></i>
-                </div>
-                <div>
-                    <h1 style="font-size: 20px; font-weight: bold; margin: 0; color: #fff;">Withdraw</h1>
-                    <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">Choose a network to withdraw</p>
-                </div>
-            </div>
-            <button class="refresh-btn" style="width: 32px; height: 32px; font-size: 12px;" onclick="refreshWithdraw()"><i class="fa-solid fa-rotate-right"></i></button>
-        </div>
-
-        <div style="margin-top: 12px; background-color: var(--bg-card); border-radius: 16px; padding: 20px;">
-            <h2 style="font-size: 18px; font-weight: bold; color: #fff; margin: 0 0 8px 0;">Select Network</h2>
-            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0 0 20px 0;">
-                Choose the network to send your USDT. Please ensure your receiving wallet supports the selected network.
-            </p>
-
-            <div onclick="selectWithdrawNetwork('Solana (SPL)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.2s;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 40px; height: 40px; background-color: rgba(251, 215, 67, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-yellow); font-weight: bold; font-size: 12px;">SOL</div>
-                        <div>
-                            <div style="font-size: 15px; font-weight: bold; color: #fff;">Solana <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(SPL)</span></div>
-                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">USDT on Solana</div>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 13px;"></i>
-                </div>
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--accent-yellow); line-height: 1.4;">
-                    <i class="fa-solid fa-triangle-exclamation" style="margin-top: 1px;"></i>
-                    <span>Withdrawals via Solana (SPL) network.</span>
-                </div>
-            </div>
-
-            <div onclick="selectWithdrawNetwork('BSC (BEP20)')" style="background-color: var(--bg-input); border: 1px solid #2b3139; border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 0.2s;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 40px; height: 40px; background-color: rgba(251, 215, 67, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-yellow); font-weight: bold; font-size: 11px;">BSC</div>
-                        <div>
-                            <div style="font-size: 15px; font-weight: bold; color: #fff;">BSC <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(BEP20)</span></div>
-                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">USDT on BSC</div>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 13px;"></i>
-                </div>
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--accent-yellow); line-height: 1.4;">
-                    <i class="fa-solid fa-triangle-exclamation" style="margin-top: 1px;"></i>
-                    <span>Withdrawals via BNB Smart Chain (BEP20) network.</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MORE VIEW -->
-    <div id="more" class="view">
-        <div class="more-container">
-            <div class="more-header">
-                <h1>More</h1>
-                <p>Additional options and settings</p>
-            </div>
-
-            <div class="menu-list">
-                <div class="menu-item" onclick="openProfileModal()">
-                    <div class="menu-icon-bg"><i class="fa-regular fa-user"></i></div>
-                    <div class="menu-text">
-                        <div class="menu-title">View Profile</div>
-                        <div class="menu-sub">See your profile details</div>
-                    </div>
-                </div>
-
-                <div class="menu-item" onclick="openPaymentAccountsModal()">
-                    <div class="menu-icon-bg"><i class="fa-regular fa-credit-card"></i></div>
-                    <div class="menu-text">
-                        <div class="menu-title">Payment Accounts</div>
-                        <div class="menu-sub">Manage your payment methods</div>
-                    </div>
-                </div>
-
-                <div class="menu-item" onclick="openMoreOption('referral_program')">
-                    <div class="menu-icon-bg yellow-icon"><i class="fa-solid fa-gift"></i></div>
-                    <div class="menu-text">
-                        <div class="menu-title">Referral Program</div>
-                        <div class="menu-sub">Invite friends and earn rewards</div>
-                    </div>
-                </div>
-
-                <div class="menu-item" onclick="openMoreOption('security')">
-                    <div class="menu-icon-bg red-icon"><i class="fa-solid fa-lock"></i></div>
-                    <div class="menu-text">
-                        <div class="menu-title">Security</div>
-                        <div class="menu-sub">Manage your secret code (password)</div>
-                    </div>
-                </div>
-
-                <div class="menu-item" onclick="openMoreOption('contact_center')">
-                    <div class="menu-icon-bg"><i class="fa-regular fa-comment-dots"></i></div>
-                    <div class="menu-text">
-                        <div class="menu-title">Contact Center</div>
-                        <div class="menu-sub">Get support from our team</div>
-                    </div>
-                </div>
-
-                <div class="menu-item" onclick="openHowToUseModal()">
-                    <div class="menu-icon-bg"><i class="fa-solid fa-book-open"></i></div>
-                    <div class="menu-text">
-                        <div class="menu-title">How to Use Guide</div>
-                        <div class="menu-sub">Learn how to use the platform</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- VIEW PROFILE MODAL -->
-    <div id="profileModal" class="modal-overlay">
-        <div class="back-nav" onclick="closeProfileModal()">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Back to More</span>
-        </div>
-
-        <div class="profile-header">
-            <div class="profile-avatar" id="profAvatar">U</div>
-            <div>
-                <div class="profile-user-title" id="profFullName">Temesigen Akililu lema</div>
-                <div class="profile-username" id="profUsername">@username</div>
-            </div>
-        </div>
-
-        <div class="profile-card">
-            <div class="profile-card-title">Trading Stats</div>
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-val green">100%</div>
-                    <div class="stat-label">Success Rate</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-val" id="profileCompletedCount">0</div>
-                    <div class="stat-label">Completed</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-val" id="profileTotalCount">0</div>
-                    <div class="stat-label">Total</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="profile-card">
-            <div class="profile-card-title">Achievements</div>
-            <div class="badge-container">
-                <span class="badge badge-green">★ New Trader</span>
-                <span class="badge badge-blue">✔ Verified</span>
-            </div>
-        </div>
-
-        <div class="profile-card referral-card" onclick="openMoreOption('referral_program')">
-            <div class="referral-left">
-                <div class="referral-icon"><i class="fa-solid fa-gift"></i></div>
-                <div>
-                    <div class="referral-title">Referral Program</div>
-                    <div class="referral-sub">Invite friends and earn rewards</div>
-                </div>
-            </div>
-            <div style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right"></i></div>
-        </div>
-
-        <div class="profile-card">
-            <div class="profile-card-title">Personal Info</div>
-            <div class="info-row">
-                <span class="info-label">Full Name</span>
-                <span class="info-val" id="profInfoName">Temesigen Akililu lema <i class="fa-solid fa-pen edit-icon" onclick="editProfileField('Full Name')"></i></span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Nickname</span>
-                <span class="info-val">Not set <i class="fa-solid fa-pen edit-icon" onclick="editProfileField('Nickname')"></i></span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Email</span>
-                <div>
-                    <div class="info-val">N/A <i class="fa-solid fa-pen edit-icon" onclick="editProfileField('Email')"></i></div>
-                    <div class="warning-text">⚠️ Not verified</div>
-                </div>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Phone</span>
-                <span class="info-val">N/A</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Nationality</span>
-                <span class="info-val">Ethiopian</span>
-            </div>
-        </div>
-
-        <div class="profile-card">
-            <div class="profile-card-title">Account Info</div>
-            <div class="info-row">
-                <span class="info-label">Member since</span>
-                <span class="info-val">Today</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Account Status</span>
-                <span class="info-val" style="color: var(--accent-green);">Active</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">KYC Status</span>
-                <span class="info-val">VERIFIED</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Total Trades</span>
-                <span class="info-val" id="profileTotalTradesRow">0</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Cancelled</span>
-                <span class="info-val" style="color: var(--accent-yellow);">0</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Reliability Score</span>
-                <span class="info-val" style="color: var(--accent-green);">100%</span>
-            </div>
-        </div>
-
-        <div class="profile-card">
-            <div class="profile-card-title">Security</div>
-            <div class="security-btn" onclick="openMoreOption('security')">
-                <i class="fa-solid fa-lock" style="color: var(--accent-red);"></i> Change Secret Code (Password)
-            </div>
-        </div>
-    </div>
-
-    <!-- PAYMENT ACCOUNTS MODAL -->
-    <div id="paymentAccountsModal" class="modal-overlay">
-        <div class="back-nav" onclick="closePaymentAccountsModal()">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Back to More</span>
-        </div>
-
-        <h1 style="font-size: 22px; margin: 0 0 4px 0;">Payment Accounts</h1>
-        <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-muted);">Manage your payment methods</p>
-
-        <div id="savedPaymentAccountsList"></div>
-
-        <div class="pm-modal-card">
-            <div class="pm-modal-header">
-                <div class="pm-modal-title">Add Payment Method</div>
-                <div class="pm-close-btn" onclick="closePaymentAccountsModal()"><i class="fa-solid fa-xmark"></i></div>
-            </div>
-
-            <div class="pm-field">
-                <label class="pm-label">Provider <span>*</span></label>
-                <select id="pmProvider" class="pm-select">
-                    <option value="" disabled selected>Select a provider</option>
-                    <option value="Telebirr">Telebirr</option>
-                    <option value="CBE Birr">CBE Birr</option>
-                    <option value="Commercial Bank of Ethiopia (CBE)">Commercial Bank of Ethiopia (CBE)</option>
-                    <option value="BOA (Bank of Abyssinia)">BOA (Bank of Abyssinia)</option>
-                    <option value="Awash Bank">Awash Bank</option>
-                    <option value="MEXC P2P">MEXC P2P</option>
+          <div class="post-box">
+            <h3>Post a new offer</h3>
+            <div class="form-row">
+              <div class="field">
+                <label>Side</label>
+                <select id="adSide">
+                  <option value="sell">Sell BTC</option>
+                  <option value="buy">Buy BTC</option>
                 </select>
+              </div>
+              <div class="field">
+                <label>Payment</label>
+                <input type="text" id="adMethod" placeholder="Bank transfer">
+              </div>
             </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Amount (BTC)</label>
+                <input type="number" step="0.0001" id="adAmount" placeholder="0.05">
+              </div>
+              <div class="field">
+                <label>Price (USD)</label>
+                <input type="number" step="1" id="adPrice" placeholder="64000">
+              </div>
+            </div>
+            <button class="post-submit" id="postAdBtn">Post offer</button>
+          </div>
 
-            <div class="pm-field">
-                <label class="pm-label">Account Name <span>*</span></label>
-                <input type="text" id="pmAccountName" class="pm-input pm-input-disabled" value="Temesigen Akililu lema" readonly>
-                <div class="pm-subtext">Uses your verified full name</div>
-            </div>
-
-            <div class="pm-field">
-                <label class="pm-label">Account Number (Optional)</label>
-                <input type="text" id="pmAccountNumber" class="pm-input" placeholder="Account number">
-            </div>
-
-            <div class="pm-field">
-                <label class="pm-label">Phone Number (Optional)</label>
-                <input type="tel" id="pmPhoneNumber" class="pm-input" placeholder="Phone number">
-            </div>
-
-            <div class="pm-btn-row">
-                <button class="pm-btn-cancel" onclick="closePaymentAccountsModal()">Cancel</button>
-                <button class="pm-btn-save" onclick="savePaymentMethod()">Save</button>
-            </div>
+          <div class="section-label">Your live offers</div>
+          <div id="myAdList"></div>
         </div>
+
+        <!-- ============ CHAT TAB ============ -->
+        <div class="screen hidden" id="screen-chat">
+          <div class="topnav"><span class="tab active" style="color:#1E2329;font-weight:800;">Chat</span></div>
+          <div class="empty-state">Trade chat opens automatically<br>from an active order.</div>
+        </div>
+
+        <!-- ============ PROFILE TAB ============ -->
+        <div class="screen hidden" id="screen-profile">
+          <div class="topnav"><span class="tab active" style="color:#1E2329;font-weight:800;">Profile</span></div>
+          <div class="profile-head">
+            <div class="profile-avatar" id="profAvatar">A</div>
+            <div>
+              <div class="profile-name" id="profName">Alice</div>
+              <div class="profile-sub">Verified P2P trader</div>
+            </div>
+          </div>
+          <div class="wallet-card" id="walletCard"></div>
+        </div>
+
+      </div>
+
+      <div class="tabbar">
+        <button class="active" data-tab="p2p" onclick="switchTab('p2p')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.5-5 5-5s5 2 5 5"/><path d="M13 19c.3-2 2-3.5 4-3.5s3.7 1.5 4 3.5"/></svg>
+          P2P
+        </button>
+        <button data-tab="orders" onclick="switchTab('orders')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="15" cy="16" r="3"/><path d="M15 15v1.4l1 .6"/></svg>
+          Orders
+        </button>
+        <button data-tab="ads" onclick="switchTab('ads')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a2 2 0 0 0 2 2h1l2 5 2-1-1-4h6l4 3V6l-4 3H6a2 2 0 0 0-2 2z"/></svg>
+          Ads
+        </button>
+        <button data-tab="chat" onclick="switchTab('chat')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H8l-4 4z"/></svg>
+          Chat
+        </button>
+        <button data-tab="profile" onclick="switchTab('profile')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>
+          Profile
+        </button>
+      </div>
+
+      <!-- ============ TRADE MODAL ============ -->
+      <div class="modal-overlay hidden" id="modalOverlay">
+        <div class="sheet">
+          <div class="sheet-head">
+            <h3 id="sheetTitle">Trade</h3>
+            <span class="sheet-close" onclick="closeModal()">&times;</span>
+          </div>
+          <div class="sheet-body" id="sheetBody"></div>
+        </div>
+      </div>
+
     </div>
+  </div>
 
-    <!-- HOW TO USE GUIDE MODAL -->
-    <div id="howToUseModal" class="modal-overlay">
-        <div class="back-nav" onclick="closeHowToUseModal()">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Back</span>
+<script>
+/* ================= state ================= */
+const state = {
+  users: {
+    alice:{ name:'Alice', btc:{available:0.42, locked:0}, usd:5200 },
+    bob:{ name:'Bob', btc:{available:0.10, locked:0}, usd:14800 },
+    carol:{ name:'Carol', btc:{available:0.75, locked:0}, usd:900 },
+  },
+  currentUser:'alice',
+  currentTab:'p2p',
+  side:'buy', // which side of the book we're browsing: buy = I want to buy BTC (shows sell ads), sell = I want to sell BTC (shows buy ads)
+  ads:[
+    {id:'ad-1', side:'sell', user:'bob', amount:0.05, price:64000, method:'Bank transfer', minUsd:500, maxUsd:3200},
+    {id:'ad-2', side:'sell', user:'carol', amount:0.20, price:63750, method:'PayPal', minUsd:1000, maxUsd:12750},
+    {id:'ad-3', side:'buy', user:'bob', amount:0.08, price:63500, method:'Cash deposit', minUsd:800, maxUsd:5080},
+  ],
+  orders:[],
+  seq:1,
+  activeAd:null,
+  activeOrder:null,
+};
+const PAYMENT_WINDOW_SECONDS = 90;
+const STEPS = ['created','escrow','payment_sent','released'];
+const STEP_LABELS = {created:'Opened', escrow:'Escrow locked', payment_sent:'Payment sent', released:'Released'};
+
+function fmtUSD(n){ return '$'+n.toLocaleString(undefined,{maximumFractionDigits:2}); }
+function fmtBTC(n){ return n.toFixed(4)+' BTC'; }
+function now(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function pushLog(o,msg){ o.log.push({t:now(), msg}); }
+function fmtClock(sec){ sec=Math.max(0,Math.round(sec)); const m=Math.floor(sec/60), s=sec%60; return `${m}:${s.toString().padStart(2,'0')}`; }
+function initials(name){ return name.charAt(0).toUpperCase(); }
+
+/* ================= tabs ================= */
+function switchTab(tab){
+  state.currentTab = tab;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('screen-'+tab).classList.remove('hidden');
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  render();
+}
+function setSide(side){
+  state.side = side;
+  document.getElementById('toggleBuy').classList.toggle('active', side==='buy');
+  document.getElementById('toggleSell').classList.toggle('active', side==='sell');
+  renderAdList();
+}
+
+/* ================= render ================= */
+function render(){
+  renderUserSelect();
+  if(state.currentTab==='p2p') renderAdList();
+  if(state.currentTab==='orders') renderOrderList();
+  if(state.currentTab==='ads') renderMyAds();
+  if(state.currentTab==='profile') renderProfile();
+  if(state.activeOrder) renderOrderModal(state.activeOrder);
+}
+
+function renderUserSelect(){
+  const sel = document.getElementById('userSelect');
+  sel.innerHTML = Object.entries(state.users).map(([id,u])=>
+    `<option value="${id}" ${id===state.currentUser?'selected':''}>${u.name}</option>`).join('');
+}
+
+function renderAdList(){
+  const box = document.getElementById('adList');
+  // Buy tab shows sell-side ads (I can buy from a seller); Sell tab shows buy-side ads
+  const wanted = state.side==='buy' ? 'sell' : 'buy';
+  const visible = state.ads.filter(a => a.side===wanted && a.user!==state.currentUser);
+  if(!visible.length){
+    box.innerHTML = `<div class="empty-state">No matching offers right now.<br>Try the other side, or post your own in "Ads".</div>`;
+    return;
+  }
+  box.innerHTML = visible.map(a=>{
+    const trades = 100 + a.user.length*137;
+    const pct = (95+ (a.amount*10)%5).toFixed(2);
+    const btnLabel = wanted==='sell' ? 'Buy' : 'Sell';
+    const btnClass = wanted==='sell' ? 'buy' : 'sell';
+    return `
+    <div class="ad-card">
+      <div class="ad-head">
+        <div class="avatar">${initials(state.users[a.user].name)}</div>
+        <div class="ad-uname">${state.users[a.user].name}</div>
+        <span class="badge">&#128274;</span>
+      </div>
+      <div class="ad-stats">Trade: ${trades} trades &nbsp;|&nbsp; &#128077; ${pct}%</div>
+      <div class="ad-body">
+        <div>
+          <div class="ad-price">${fmtUSD(a.price)} <small>/BTC</small></div>
+          <div class="ad-limits">Limit <b>${fmtUSD(a.minUsd)} - ${fmtUSD(a.maxUsd)}</b></div>
+          <div class="ad-limits">Available <b>${fmtBTC(a.amount)}</b></div>
         </div>
-
-        <h1 style="font-size: 22px; margin: 0 0 4px 0;">How to Use</h1>
-        <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-muted);">Learn how to navigate and trade on AllP2P</p>
-
-        <div class="guide-section">
-            <div class="guide-title"><i class="fa-solid fa-bullhorn"></i> 1. Creating Ads</div>
-            <ul class="guide-list">
-                <li>Navigate to the "Ads" tab in the bottom navigation</li>
-                <li>Click the "Create" button to start creating an ad</li>
-                <li>Choose between "Buy" or "Sell" USDT</li>
-                <li>Set your preferred price, trade limits, and select payment methods</li>
-                <li>Your ad will appear in the marketplace once published</li>
-            </ul>
+        <div class="ad-right">
+          <div class="pay-tag"><span class="pay-dot dot-green"></span>${a.method}</div>
+          <div class="ad-timer">&#9201; 15 min</div>
+          <button class="trade-btn ${btnClass}" onclick="openTradeForm('${a.id}')">${btnLabel}</button>
         </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMyAds(){
+  const box = document.getElementById('myAdList');
+  const mine = state.ads.filter(a=>a.user===state.currentUser);
+  if(!mine.length){
+    box.innerHTML = `<div class="empty-state">You have no live offers.<br>Post one above.</div>`;
+    return;
+  }
+  box.innerHTML = mine.map(a=>`
+    <div class="myad-row">
+      <div class="myad-top"><span>${a.side==='sell'?'Sell':'Buy'} ${fmtBTC(a.amount)}</span><span>${fmtUSD(a.price)}/BTC</span></div>
+      <div class="myad-sub">${a.method} &middot; Limit ${fmtUSD(a.minUsd)}-${fmtUSD(a.maxUsd)}</div>
+      <span class="myad-cancel" onclick="removeAd('${a.id}')">Remove offer</span>
     </div>
+  `).join('');
+}
 
-    <!-- BOTTOM NAVIGATION -->
-    <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('home', this)">
-            <i class="fa-solid fa-house"></i>
-            <span>Home</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('orders', this)">
-            <div class="nav-icon-container">
-                <i class="fa-regular fa-file-lines"></i>
-                <span id="ordersBadgeCount" class="badge-count" style="display: none;">0</span>
-            </div>
-            <span>Orders</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('ads', this)">
-            <i class="fa-solid fa-bullhorn"></i>
-            <span>Ads</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('wallet', this)">
-            <i class="fa-solid fa-wallet"></i>
-            <span>Wallet</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('more', this)">
-            <i class="fa-solid fa-ellipsis"></i>
-            <span>More</span>
-        </div>
+function renderProfile(){
+  const u = state.users[state.currentUser];
+  document.getElementById('profAvatar').textContent = initials(u.name);
+  document.getElementById('profName').textContent = u.name;
+  document.getElementById('walletCard').innerHTML = `
+    <div class="wallet-line"><span class="l">BTC available</span><span class="v">${fmtBTC(u.btc.available)}</span></div>
+    <div class="wallet-line"><span class="l">BTC locked in escrow</span><span class="v locked">${fmtBTC(u.btc.locked)}</span></div>
+    <div class="wallet-line"><span class="l">Cash balance</span><span class="v">${fmtUSD(u.usd)}</span></div>
+  `;
+}
+
+function stepIndex(status){
+  if(status==='disputed') return 1;
+  if(status==='cancelled') return -1;
+  return STEPS.indexOf(status);
+}
+
+function renderOrderList(){
+  const box = document.getElementById('orderList');
+  const mine = state.orders.filter(o=>o.buyer===state.currentUser||o.seller===state.currentUser)
+                            .sort((a,b)=>b.createdAt-a.createdAt);
+  if(!mine.length){
+    box.innerHTML = `<div class="empty-state">No orders yet.<br>Start a trade from the P2P tab.</div>`;
+    return;
+  }
+  box.innerHTML = mine.map(o=>{
+    const counterparty = o.seller===state.currentUser ? state.users[o.buyer].name : state.users[o.seller].name;
+    const role = o.seller===state.currentUser ? 'Selling to' : 'Buying from';
+    let timerHtml = '';
+    if(o.status==='escrow' && o.deadline){
+      const remaining=(o.deadline-Date.now())/1000;
+      timerHtml = `<div class="order-row-timer">Pay within ${fmtClock(remaining)}</div>`;
+    }
+    return `
+    <div class="order-row" onclick="openOrderDetail('${o.id}')">
+      <div class="order-row-top">
+        <span class="order-row-title">${role} ${counterparty}</span>
+        <span class="chip ${o.status}">${statusLabel(o.status)}</span>
+      </div>
+      <div class="order-row-sub">${fmtBTC(o.amount)} &middot; ${fmtUSD(o.amount*o.price)} &middot; ${o.method}</div>
+      ${timerHtml}
+    </div>`;
+  }).join('');
+}
+function statusLabel(s){
+  return {escrow:'Escrow locked', payment_sent:'Payment sent', released:'Completed', disputed:'Disputed', cancelled:'Cancelled'}[s] || s;
+}
+
+/* ================= trade modal: form step ================= */
+function openTradeForm(adId){
+  state.activeAd = state.ads.find(a=>a.id===adId);
+  state.activeOrder = null;
+  document.getElementById('sheetTitle').textContent = state.activeAd.side==='sell' ? 'Buy BTC' : 'Sell BTC';
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  renderTradeForm();
+}
+function renderTradeForm(){
+  const a = state.activeAd;
+  const seller = a.side==='sell' ? a.user : state.currentUser;
+  document.getElementById('sheetBody').innerHTML = `
+    <div class="trade-summary">
+      <div class="who">Trading with <b>${state.users[a.user].name}</b></div>
+      <div class="price">${fmtUSD(a.price)} <small style="font-size:11px;color:var(--gray);">/BTC</small></div>
     </div>
-
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-
-        let selectedType = 'buy';
-        let currentFilter = 'all';
-
-        let currentTrade = {
-            sellerName: 'Azuz',
-            rate: 188.00,
-            minETB: 3690.44,
-            maxETB: 50000,
-            acceptedPayments: ['Telebirr', 'CBE Birr', 'Awash Bank'],
-            chosenPayment: 'Telebirr',
-            currency: 'USD',
-            isSellAd: false
-        };
-
-        const defaultBuyAds = [
-            { id: 'def1', username: 'Worldcup2026', type: 'buy', price: '187.00', min: '5000', max: '7526.75', payments: ['Telebirr', 'CBE Birr'], stats: '91% | 6 orders' },
-            { id: 'def2', username: 'welay36', type: 'buy', price: '187.25', min: '3000', max: '51842.03', payments: ['Telebirr', 'Awash Bank'], stats: '92% | 15 orders' }
-        ];
-
-        const defaultSellAds = [
-            { id: 'def3', username: 'Azuz', type: 'sell', price: '188.00', min: '3690.44', max: '50000.00', payments: ['Telebirr', 'CBE Birr', 'Awash Bank'], stats: '98% | 42 orders' }
-        ];
-
-        function getCurrentUsername() {
-            return (tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.first_name : 'Temesigen';
-        }
-
-        function getStoredAds() { return JSON.parse(localStorage.getItem('allp2p_user_ads') || '[]'); }
-        function saveStoredAds(ads) { localStorage.setItem('allp2p_user_ads', JSON.stringify(ads)); }
-
-        function getStoredPaymentMethods() {
-            const methods = JSON.parse(localStorage.getItem('allp2p_payment_methods') || '[]');
-            if (methods.length === 0) {
-                return [
-                    { id: 'pm_def1', provider: 'Telebirr', accountName: 'Temesigen Akililu lema' },
-                    { id: 'pm_def2', provider: 'CBE Birr', accountName: 'Temesigen Akililu lema' },
-                    { id: 'pm_def3', provider: 'Awash Bank', accountName: 'Temesigen Akililu lema' },
-                    { id: 'pm_def4', provider: 'MEXC P2P', accountName: 'Temesigen Akililu lema' }
-                ];
-            }
-            return methods;
-        }
-
-        function saveStoredPaymentMethods(methods) { localStorage.setItem('allp2p_payment_methods', JSON.stringify(methods)); }
-
-        function getOngoingOrders() { return JSON.parse(localStorage.getItem('allp2p_ongoing_orders') || '[]'); }
-        function saveOngoingOrders(orders) { localStorage.setItem('allp2p_ongoing_orders', JSON.stringify(orders)); }
-
-        function getCompletedOrders() { return JSON.parse(localStorage.getItem('allp2p_completed_orders') || '[]'); }
-        function saveCompletedOrders(orders) { localStorage.setItem('allp2p_completed_orders', JSON.stringify(orders)); }
-
-        function getWalletBalance() {
-            const walletData = JSON.parse(localStorage.getItem('allp2p_wallet') || '{"available": 0.00, "escrow": 0.00}');
-            return walletData;
-        }
-
-        function saveWalletBalance(walletData) {
-            localStorage.setItem('allp2p_wallet', JSON.stringify(walletData));
-            updateWalletDisplay();
-        }
-
-        function updateWalletDisplay() {
-            const wallet = getWalletBalance();
-            const total = wallet.available + wallet.escrow;
-            
-            const totalEl = document.getElementById('totalBalance');
-            const availEl = document.getElementById('availBalance');
-            const escrowEl = document.getElementById('escrowBalance');
-            
-            if (totalEl) totalEl.innerText = `$${total.toFixed(2)}`;
-            if (availEl) availEl.innerText = `$${wallet.available.toFixed(2)}`;
-            if (escrowEl) escrowEl.innerText = `$${wallet.escrow.toFixed(2)}`;
-        }
-
-        function updateOrdersBadge() {
-            const orders = getOngoingOrders();
-            const badgeEl = document.getElementById('ordersBadgeCount');
-            
-            const activeOrders = orders.filter(o => 
-                o.status === 'PENDING_APPROVAL' || 
-                o.status === 'Payment Pending' || 
-                o.status === 'APPROVED' ||
-                o.status === 'PAID'
-            );
-            
-            const activeCount = activeOrders.length;
-            if (activeCount > 0) {
-                badgeEl.innerText = activeCount;
-                badgeEl.style.display = 'flex';
-            } else {
-                badgeEl.style.display = 'none';
-            }
-        }
-
-        function updateProfileStats() {
-            const completed = getCompletedOrders().length;
-            const ongoing = getOngoingOrders().length;
-            const total = completed + ongoing;
-
-            const cEl = document.getElementById('profileCompletedCount');
-            const tEl = document.getElementById('profileTotalCount');
-            const trEl = document.getElementById('profileTotalTradesRow');
-
-            if (cEl) cEl.innerText = completed;
-            if (tEl) tEl.innerText = total;
-            if (trEl) trEl.innerText = total;
-        }
-
-        function renderHomeAds() {
-            const userAds = getStoredAds();
-            const buyContainer = document.getElementById('buyMarketList');
-            const sellContainer = document.getElementById('sellMarketList');
-
-            const userBuyAdsForSellSection = userAds.filter(a => a.type === 'buy');
-            const userSellAdsForBuySection = userAds.filter(a => a.type === 'sell');
-
-            const allBuy = [...defaultBuyAds, ...userSellAdsForBuySection];
-            const allSell = [...defaultSellAds, ...userBuyAdsForSellSection];
-
-            buyContainer.innerHTML = allBuy.map(ad => createAdCardHTML(ad, false)).join('');
-            sellContainer.innerHTML = allSell.map(ad => createAdCardHTML(ad, false)).join('');
-        }
-
-        function renderMyAds() {
-            const userAds = getStoredAds();
-            const myAdsContainer = document.getElementById('myAdsList');
-            const emptyState = document.getElementById('myAdsEmptyState');
-
-            let filtered = userAds;
-            if (currentFilter === 'buy') filtered = userAds.filter(a => a.type === 'buy');
-            if (currentFilter === 'sell') filtered = userAds.filter(a => a.type === 'sell');
-
-            if (filtered.length === 0) {
-                myAdsContainer.innerHTML = '';
-                emptyState.style.display = 'flex';
-            } else {
-                emptyState.style.display = 'none';
-                myAdsContainer.innerHTML = filtered.map(ad => createAdCardHTML(ad, true)).join('');
-            }
-        }
-
-        function createAdCardHTML(ad, isMyAd) {
-            const isBuy = ad.type === 'buy';
-            const btnBg = isBuy ? 'buy-bg' : 'sell-bg';
-            const btnText = isBuy ? 'Buy' : 'Sell';
-            const username = ad.username || getCurrentUsername();
-            const avatarChar = username.charAt(0).toUpperCase();
-            
-            const paymentList = (ad.payments && ad.payments.length > 0) ? ad.payments : [ad.payment || 'Telebirr'];
-            const tagsHTML = paymentList.map(p => `<span class="tag">${p}</span>`).join('');
-            const pmParam = encodeURIComponent(JSON.stringify(paymentList));
-
-            return `
-                <div class="card">
-                    <div class="card-header">
-                        <div class="user-info">
-                            <div class="avatar">${avatarChar}<div class="online-dot"></div></div>
-                            <div class="user-details">
-                                <h3>${username}</h3>
-                                <p class="user-stats"><i class="fa-solid fa-star"></i> ${ad.stats || '100% | New'}</p>
-                            </div>
-                        </div>
-                        ${isMyAd ? 
-                            `<button class="action-btn sell-bg" onclick="deleteAd('${ad.id}')">Delete</button>` : 
-                            `<button class="action-btn ${btnBg}" onclick="startTrade('${username}', '${ad.price}', '${ad.min || 200}', '${ad.max || 50000}', '${pmParam}', ${isBuy})">${btnText}</button>`
-                        }
-                    </div>
-                    <div class="card-details">
-                        <div class="detail-col"><span class="label">Price</span><span class="price-val">${ad.price} <span style="font-size:11px;">ETB</span></span></div>
-                        <div class="detail-col"><span class="label">Limit</span><span class="limit-val">${Number(ad.min).toLocaleString()} -<br>${Number(ad.max).toLocaleString()} ETB</span></div>
-                        <div class="detail-col" style="align-items:flex-end;"><span class="label">Payment</span><div class="payment-tags">${tagsHTML}</div></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function handleSellerAction(orderId, action) {
-            let orders = getOngoingOrders();
-            const idx = orders.findIndex(o => o.id === orderId);
-            if (idx !== -1) {
-                if (action === 'approve') {
-                    orders[idx].status = 'APPROVED';
-                    saveOngoingOrders(orders);
-                    tg.sendData(JSON.stringify({ action: "seller_order_decision", orderId: orderId, decision: action }));
-                    renderOngoingOrders();
-                } else if (action === 'reject') {
-                    orders[idx].status = 'REJECTED';
-                    saveOngoingOrders(orders);
-                    renderOngoingOrders();
-                } else if (action === 'release') {
-                    const order = orders[idx];
-                    const amountUSDT = parseFloat(order.amountUSDT);
-
-                    order.status = 'COMPLETED';
-                    orders.splice(idx, 1);
-                    saveOngoingOrders(orders);
-
-                    let completed = getCompletedOrders();
-                    completed.unshift(order);
-                    saveCompletedOrders(completed);
-
-                    tg.sendData(JSON.stringify({ action: "release_asset", orderId: orderId, amount: amountUSDT }));
-                    alert(`Successfully released ${amountUSDT} USDT!`);
-                    
-                    renderOngoingOrders();
-                    renderCompletedOrders();
-                    updateProfileStats();
-                }
-            }
-        }
-
-        function markOrderAsPaid(orderId) {
-            let orders = getOngoingOrders();
-            const idx = orders.findIndex(o => o.id === orderId);
-            if (idx !== -1) {
-                orders[idx].status = 'PAID';
-                saveOngoingOrders(orders);
-                tg.sendData(JSON.stringify({ action: "buyer_mark_paid", orderId: orderId }));
-                renderOngoingOrders();
-            }
-        }
-
-        function renderOngoingOrders() {
-            const container = document.getElementById('ongoingOrdersList');
-            const orders = getOngoingOrders();
-            const me = getCurrentUsername();
-
-            updateOrdersBadge();
-
-            if (orders.length === 0) {
-                container.innerHTML = `
-                    <div class="orders-empty-state">
-                        <div class="orders-empty-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
-                        <p class="orders-empty-title">No ongoing orders or requests</p>
-                        <p class="orders-empty-sub">Start trading to see your active orders and requests here</p>
-                        <button class="btn-browse" onclick="switchTab('home', document.querySelectorAll('.nav-item')[0])">Browse Marketplace</button>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = orders.map(ord => {
-                const isSeller = ord.seller === me;
-                const isPending = ord.status === 'PENDING_APPROVAL';
-                const isAPPROVED = ord.status === 'APPROVED';
-                const isPaid = ord.status === 'PAID';
-                
-                let displayStatus = ord.status.replace('_', ' ');
-                if (isSeller && isAPPROVED) {
-                    displayStatus = 'Payment Pending';
-                } else if (isPaid) {
-                    displayStatus = 'PAID - RELEASE ASSET';
-                }
-                
-                const statusClass = isAPPROVED ? 'approved' : (isPaid ? 'paid' : (ord.status === 'REJECTED' ? 'rejected' : ''));
-
-                return `
-                <div class="order-card-item">
-                    <div class="order-card-header">
-                        <span class="order-title">Order #${ord.id.slice(-6)}</span>
-                        <span class="order-status ${statusClass}">${displayStatus}</span>
-                    </div>
-                    <div class="card-details">
-                        <div class="detail-col"><span class="label">${isSeller ? 'Buyer' : 'Seller'}</span><span class="limit-val">${isSeller ? ord.buyer : ord.seller}</span></div>
-                        <div class="detail-col"><span class="label">Amount</span><span class="limit-val">${ord.amountUSDT} USDT</span></div>
-                        <div class="detail-col" style="align-items:flex-end;"><span class="label">Payment Method</span><span class="price-val" style="font-size:13px; color:var(--accent-yellow);">${ord.chosenPayment}</span></div>
-                    </div>
-                    <div style="margin-top:10px; font-size:12px; color:var(--text-muted);">
-                        Total Pay: <strong style="color:#fff;">${ord.amountETB} ETB</strong>
-                    </div>
-
-                    <div class="next-steps-card" style="background-color: #0b0e11; border: 1px solid #2b3139; margin-top: 10px;">
-                        <div class="next-steps-title" style="color: #fff; font-size: 12px; margin-bottom: 6px;">
-                            Payment Details
-                        </div>
-                        <div style="font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;">
-                            <div>Bank/Provider: <strong style="color:#fff;">${ord.chosenPayment}</strong></div>
-                            <div>Account Name: <strong style="color:#fff;">${ord.seller}</strong></div>
-                            <div>Phone/Account: <strong style="color:#fff;">${ord.sellerAccount || 'Verified Merchant Account'}</strong></div>
-                            <div>Reference: <strong style="color:#fff;">ORD-${ord.id.slice(-6)}</strong></div>
-                        </div>
-                    </div>
-
-                    ${isAPPROVED && !isSeller ? `
-                        <button class="btn-pay-action" id="pay-btn-${ord.id}" style="display: block;" onclick="markOrderAsPaid('${ord.id}')">I Have Paid</button>
-                    ` : ''}
-
-                    ${isPaid && !isSeller ? `
-                        <div style="margin-top: 10px; font-size: 12px; color: var(--accent-blue); text-align: center; font-weight: bold;">
-                            Payment Marked. Waiting for Seller to Release Asset.
-                        </div>
-                    ` : ''}
-
-                    ${isSeller && isPending ? `
-                        <div class="approval-actions">
-                            <button class="btn-approve" onclick="handleSellerAction('${ord.id}', 'approve')">Approve Request</button>
-                            <button class="btn-reject" onclick="handleSellerAction('${ord.id}', 'reject')">Reject</button>
-                        </div>
-                    ` : ''}
-
-                    ${isSeller && isPaid ? `
-                        <div class="approval-actions">
-                            <button class="btn-approve" style="background-color: var(--accent-green); color: #000;" onclick="handleSellerAction('${ord.id}', 'release')">Release Asset</button>
-                        </div>
-                    ` : ''}
-
-                    <div class="next-steps-card">
-                        <div class="next-steps-title">
-                            <i class="fa-solid fa-list-check"></i> Next Steps
-                        </div>
-                        <ol class="next-steps-list">
-                            ${isSeller ? `
-                                <li><strong>Review Request:</strong> Check buyer details and decide whether to accept.</li>
-                                <li><strong>Wait for Payment:</strong> Once accepted, wait for <strong>${ord.buyer}</strong> to transfer <strong>${ord.amountETB} ETB</strong> using the reference details.</li>
-                                <li><strong>Release Crypto:</strong> Verify payment in your banking app, then click <strong>Release Asset</strong>.</li>
-                            ` : `
-                                <li><strong>Transfer Funds:</strong> Send exactly <strong>${ord.amountETB} ETB</strong> to <strong>${ord.seller}</strong> (${ord.chosenPayment}) using reference <strong>ORD-${ord.id.slice(-6)}</strong>.</li>
-                                <li><strong>Confirm Payment:</strong> Click <strong>"I Have Paid"</strong> once the transaction is complete.</li>
-                                <li><strong>Receive Crypto:</strong> The seller will release <strong>${ord.amountUSDT} USDT</strong> to your wallet balance.</li>
-                            `}
-                        </ol>
-                    </div>
-                </div>
-            `;
-            }).join('');
-        }
-
-        function renderCompletedOrders() {
-            const container = document.getElementById('completedOrdersContainer');
-            const completed = getCompletedOrders();
-
-            if (completed.length === 0) {
-                container.innerHTML = `
-                    <div class="orders-empty-state">
-                        <div class="orders-empty-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                        <p class="orders-empty-title">No completed orders yet</p>
-                        <p class="orders-empty-sub">Your finished trade history will appear here</p>
-                        <button class="btn-browse" onclick="switchTab('home', document.querySelectorAll('.nav-item')[0])">Browse Marketplace</button>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = completed.map(ord => `
-                <div class="order-card-item" style="border-left-color: var(--accent-green);">
-                    <div class="order-card-header">
-                        <span class="order-title">Order #${ord.id.slice(-6)}</span>
-                        <span class="order-status completed">COMPLETED</span>
-                    </div>
-                    <div class="card-details">
-                        <div class="detail-col"><span class="label">Seller</span><span class="limit-val">${ord.seller}</span></div>
-                        <div class="detail-col"><span class="label">Amount</span><span class="limit-val">${ord.amountUSDT} USDT</span></div>
-                        <div class="detail-col" style="align-items:flex-end;"><span class="label">Payment Method</span><span class="price-val" style="font-size:13px; color:var(--accent-yellow);">${ord.chosenPayment}</span></div>
-                    </div>
-                    <div style="margin-top:10px; font-size:12px; color:var(--text-muted);">
-                        Total Paid: <strong style="color:#fff;">${ord.amountETB} ETB</strong>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function populateAdPaymentMethods() {
-            const container = document.getElementById('adPaymentOptionsContainer');
-            const methods = getStoredPaymentMethods();
-
-            if (methods.length === 0) {
-                container.innerHTML = `<div style="font-size:12px; color:var(--accent-yellow);">No saved payment methods. Please add one in 'More' > 'Payment Accounts' first.</div>`;
-                return;
-            }
-
-            container.innerHTML = methods.map((pm, index) => `
-                <div class="payment-card-select ${index === 0 ? 'selected' : ''}" onclick="togglePaymentSelect(this)" data-provider="${pm.provider}" data-account="${pm.accountNumber || pm.phoneNumber || 'Verified Account'}">
-                    <div class="payment-card-info">
-                        <span class="payment-card-title">${pm.provider}</span>
-                        <span class="payment-card-sub">${pm.accountName} ${pm.accountNumber ? '• ' + pm.accountNumber : ''}</span>
-                    </div>
-                    <div class="payment-card-check" style="display: ${index === 0 ? 'block' : 'none'};"><i class="fa-solid fa-check"></i></div>
-                </div>
-            `).join('');
-        }
-
-        function createNewAd() { 
-            populateAdPaymentMethods();
-            document.getElementById('createAdModal').classList.add('active'); 
-        }
-
-        function closeCreateAd() { document.getElementById('createAdModal').classList.remove('active'); }
-
-        function togglePaymentSelect(element) {
-            const checkIcon = element.querySelector('.payment-card-check');
-            if (element.classList.contains('selected')) {
-                element.classList.remove('selected');
-                checkIcon.style.display = 'none';
-            } else {
-                element.classList.add('selected');
-                checkIcon.style.display = 'block';
-            }
-        }
-
-        function submitNewAd() {
-            const price = document.getElementById('adPrice').value;
-            const amount = document.getElementById('adAmount').value;
-            const min = document.getElementById('adMin').value;
-            const max = document.getElementById('adMax').value;
-            const terms = document.getElementById('adTerms').value;
-
-            const selectedCards = document.querySelectorAll('#adPaymentOptionsContainer .payment-card-select.selected');
-            const selectedPayments = Array.from(selectedCards).map(card => card.getAttribute('data-provider'));
-
-            if (!price || !amount || !min || !max) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-
-            if (selectedPayments.length === 0) {
-                alert('Please select at least one payment method.');
-                return;
-            }
-
-            const newAd = {
-                id: 'ad_' + Date.now(),
-                username: getCurrentUsername(),
-                type: selectedType,
-                price: parseFloat(price).toFixed(2),
-                amount: amount,
-                min: min,
-                max: max,
-                payments: selectedPayments,
-                terms: terms,
-                stats: '100% | 0 orders'
-            };
-
-            const userAds = getStoredAds();
-            userAds.push(newAd);
-            saveStoredAds(userAds);
-
-            tg.sendData(JSON.stringify({ action: "submit_ad", ad: newAd }));
-
-            closeCreateAd();
-            renderMyAds();
-            renderHomeAds();
-        }
-
-        function startTrade(traderName, rate, min, max, encodedPayments, isBuyAd) {
-            let payments = ['Telebirr'];
-            try {
-                payments = JSON.parse(decodeURIComponent(encodedPayments));
-            } catch(e) { payments = ['Telebirr']; }
-
-            currentTrade.sellerName = traderName;
-            currentTrade.rate = parseFloat(rate);
-            currentTrade.minETB = parseFloat(min) || 200;
-            currentTrade.maxETB = parseFloat(max) || 50000;
-            currentTrade.acceptedPayments = payments;
-            currentTrade.chosenPayment = payments[0];
-            currentTrade.currency = 'USD';
-            currentTrade.isSellAd = !isBuyAd;
-
-            const paymentContainer = document.getElementById('tradePaymentSelectionGroup');
-            paymentContainer.innerHTML = payments.map((pm, idx) => `
-                <div class="payment-card-select ${idx === 0 ? 'selected' : ''}" onclick="selectTradePayment(this, '${pm}')">
-                    <div class="payment-card-info">
-                        <span class="payment-card-title">${pm}</span>
-                    </div>
-                    <div class="payment-card-check" style="display: ${idx === 0 ? 'block' : 'none'};"><i class="fa-solid fa-check"></i></div>
-                </div>
-            `).join('');
-
-            document.getElementById('tradeSellerUsername').innerText = currentTrade.sellerName;
-            document.getElementById('tradeRateInfo').innerText = `Rate: 1 USD = ${currentTrade.rate.toFixed(2)} ETB`;
-            
-            const modalTitle = document.getElementById('tradeModalTitleText');
-            const summaryLabel = document.getElementById('tradeSummaryLabel');
-            const submitBtn = document.getElementById('tradeSubmitBtn');
-            const bulletCounterpart = document.getElementById('tradeBulletCounterpart');
-
-            if (currentTrade.isSellAd) {
-                modalTitle.innerText = 'Sell USDT';
-                summaryLabel.innerText = 'You will receive';
-                submitBtn.innerText = 'Sell USDT';
-                submitBtn.style.backgroundColor = 'var(--accent-red)';
-                submitBtn.style.color = '#fff';
-                bulletCounterpart.innerHTML = `Request will be sent to <span id="tradeSellerUsername" style="color:#fff; font-weight:bold;">${currentTrade.sellerName}</span> for approval/rejection`;
-            } else {
-                modalTitle.innerText = 'Buy USDT';
-                summaryLabel.innerText = 'You will pay';
-                submitBtn.innerText = 'Buy USDT';
-                submitBtn.style.backgroundColor = '';
-                submitBtn.style.color = '';
-                bulletCounterpart.innerHTML = `Request will be sent to <span id="tradeSellerUsername" style="color:#fff; font-weight:bold;">${currentTrade.sellerName}</span> for approval/rejection`;
-            }
-
-            const defaultMinUSDT = (currentTrade.minETB / currentTrade.rate).toFixed(2);
-            document.getElementById('tradeInputAmount').value = defaultMinUSDT;
-
-            setBuyCurrency('USD');
-            document.getElementById('buyOrderModal').classList.add('active');
-        }
-
-        function selectTradePayment(element, pm) {
-            document.querySelectorAll('#tradePaymentSelectionGroup .payment-card-select').forEach(card => {
-                card.classList.remove('selected');
-                card.querySelector('.payment-card-check').style.display = 'none';
-            });
-            element.classList.add('selected');
-            element.querySelector('.payment-card-check').style.display = 'block';
-            currentTrade.chosenPayment = pm;
-        }
-
-        function closeBuyOrderModal() { document.getElementById('buyOrderModal').classList.remove('active'); }
-
-        function setBuyCurrency(curr) {
-            currentTrade.currency = curr;
-            const usdBtn = document.getElementById('currTabUSD');
-            const etbBtn = document.getElementById('currTabETB');
-            const suffix = document.getElementById('tradeInputSuffix');
-
-            if (curr === 'USD') {
-                usdBtn.className = 'currency-tab active';
-                etbBtn.className = 'currency-tab';
-                suffix.innerText = 'USD';
-                document.getElementById('tradeInputAmount').value = (currentTrade.minETB / currentTrade.rate).toFixed(2);
-            } else {
-                etbBtn.className = 'currency-tab active';
-                usdBtn.className = 'currency-tab';
-                suffix.innerText = 'ETB';
-                document.getElementById('tradeInputAmount').value = currentTrade.minETB.toFixed(2);
-            }
-            calculateTrade();
-        }
-
-        function calculateTrade() {
-            const inputVal = parseFloat(document.getElementById('tradeInputAmount').value) || 0;
-            const rate = currentTrade.rate;
-            const minETB = currentTrade.minETB;
-            const maxETB = currentTrade.maxETB;
-            
-            let totalPayETB = 0;
-            let totalUSDT = 0;
-
-            if (currentTrade.currency === 'USD') {
-                totalUSDT = inputVal;
-                totalPayETB = inputVal * rate;
-            } else {
-                totalPayETB = inputVal;
-                totalUSDT = inputVal / rate;
-            }
-
-            document.getElementById('tradeCalculatedPay').innerHTML = `${totalPayETB.toFixed(2)} <span>ETB</span>`;
-
-            const inputBox = document.getElementById('tradeInputBox');
-            const errorBox = document.getElementById('tradeMinError');
-            const errorText = document.getElementById('tradeMinErrorText');
-            const submitBtn = document.getElementById('tradeSubmitBtn');
-
-            if (totalPayETB < minETB) {
-                inputBox.classList.add('error');
-                errorBox.style.display = 'flex';
-                if (currentTrade.currency === 'USD') {
-                    errorText.innerText = `Amount must be at least $${(minETB / rate).toFixed(2)} USDT`;
-                } else {
-                    errorText.innerText = `Amount must be at least ${minETB.toFixed(2)} ETB`;
-                }
-                submitBtn.classList.remove('enabled');
-            } else if (totalPayETB > maxETB) {
-                inputBox.classList.add('error');
-                errorBox.style.display = 'flex';
-                if (currentTrade.currency === 'USD') {
-                    errorText.innerText = `Amount exceeds max limit of $${(maxETB / rate).toFixed(2)} USDT`;
-                } else {
-                    errorText.innerText = `Amount exceeds max limit of ${maxETB.toFixed(2)} ETB`;
-                }
-                submitBtn.classList.remove('enabled');
-            } else {
-                inputBox.classList.remove('error');
-                errorBox.style.display = 'none';
-                submitBtn.classList.add('enabled');
-            }
-        }
-
-        function confirmBuyTrade() {
-            const inputVal = parseFloat(document.getElementById('tradeInputAmount').value) || 0;
-            const rate = currentTrade.rate;
-            const minETB = currentTrade.minETB;
-            const maxETB = currentTrade.maxETB;
-            
-            let totalPayETB = currentTrade.currency === 'USD' ? inputVal * rate : inputVal;
-            let totalUSDT = currentTrade.currency === 'USD' ? inputVal : inputVal / rate;
-
-            if (totalPayETB < minETB || totalPayETB > maxETB) {
-                alert(`Order amount must be between ${minETB.toFixed(2)} ETB and ${maxETB.toFixed(2)} ETB`);
-                return;
-            }
-
-            const tradeData = {
-                id: 'ord_' + Date.now(),
-                seller: currentTrade.sellerName,
-                buyer: getCurrentUsername(),
-                rate: currentTrade.rate,
-                amountUSDT: totalUSDT.toFixed(2),
-                amountETB: totalPayETB.toFixed(2),
-                chosenPayment: currentTrade.chosenPayment,
-                sellerAccount: 'Verified Merchant Account',
-                status: 'PENDING_APPROVAL'
-            };
-
-            const ongoing = getOngoingOrders();
-            ongoing.unshift(tradeData);
-            saveOngoingOrders(ongoing);
-
-            tg.sendData(JSON.stringify({ action: "request_buy_trade", trade: tradeData }));
-            alert(`Order request sent to ${currentTrade.sellerName} for approval!`);
-            closeBuyOrderModal();
-            renderOngoingOrders();
-            switchTab('orders', document.querySelectorAll('.nav-item')[1]);
-        }
-
-        function switchTab(tabId, element) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            if (element) element.classList.add('active');
-            if (tabId === 'orders') {
-                renderOngoingOrders();
-                renderCompletedOrders();
-            } else if (tabId === 'wallet') {
-                updateWalletDisplay();
-            }
-        }
-
-        function setHomeMarketMode(mode) {
-            const buyBtn = document.getElementById('buyToggleBtn');
-            const sellBtn = document.getElementById('sellToggleBtn');
-            const buyList = document.getElementById('buyMarketList');
-            const sellList = document.getElementById('sellMarketList');
-
-            if (mode === 'buy') {
-                buyBtn.className = 'home-toggle-btn active-buy';
-                sellBtn.className = 'home-toggle-btn';
-                buyList.style.display = 'block';
-                sellList.style.display = 'none';
-            } else {
-                sellBtn.className = 'home-toggle-btn active-sell';
-                buyBtn.className = 'home-toggle-btn';
-                sellList.style.display = 'block';
-                buyList.style.display = 'none';
-            }
-        }
-
-        function filterAds(type, element) {
-            currentFilter = type;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            element.classList.add('active');
-            renderMyAds();
-        }
-
-        function setOrderTab(tab) {
-            const ongoingBtn = document.getElementById('ongoingBtn');
-            const completedBtn = document.getElementById('completedBtn');
-            const ongoingList = document.getElementById('ongoingOrdersList');
-            const completedList = document.getElementById('completedOrdersList');
-
-            if (tab === 'ongoing') {
-                ongoingBtn.className = 'orders-toggle-btn active';
-                completedBtn.className = 'orders-toggle-btn';
-                ongoingList.style.display = 'block';
-                completedList.style.display = 'none';
-            } else {
-                completedBtn.className = 'orders-toggle-btn active';
-                ongoingBtn.className = 'orders-toggle-btn';
-                completedList.style.display = 'block';
-                ongoingList.style.display = 'none';
-            }
-        }
-
-        function openProfileModal() { populateUserInfo(); updateProfileStats(); document.getElementById('profileModal').classList.add('active'); }
-        function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
-        function openPaymentAccountsModal() { populateUserInfo(); renderSavedPaymentMethods(); document.getElementById('paymentAccountsModal').classList.add('active'); }
-        function closePaymentAccountsModal() { document.getElementById('paymentAccountsModal').classList.remove('active'); }
-        function openHowToUseModal() { document.getElementById('howToUseModal').classList.add('active'); }
-        function closeHowToUseModal() { document.getElementById('howToUseModal').classList.remove('active'); }
-
-        function renderSavedPaymentMethods() {
-            const listContainer = document.getElementById('savedPaymentAccountsList');
-            const methods = getStoredPaymentMethods();
-
-            listContainer.innerHTML = methods.map(pm => `
-                <div class="pm-account-card">
-                    <div class="pm-acc-info">
-                        <h4>${pm.provider}</h4>
-                        <p>${pm.accountName} ${pm.accountNumber ? '• ' + pm.accountNumber : ''} ${pm.phoneNumber ? '• ' + pm.phoneNumber : ''}</p>
-                    </div>
-                    <div class="pm-delete-btn" onclick="deletePaymentMethod('${pm.id}')"><i class="fa-solid fa-trash-can"></i></div>
-                </div>
-            `).join('');
-        }
-
-        function savePaymentMethod() {
-            const provider = document.getElementById('pmProvider').value;
-            const accountName = document.getElementById('pmAccountName').value;
-            const accountNumber = document.getElementById('pmAccountNumber').value;
-            const phoneNumber = document.getElementById('pmPhoneNumber').value;
-
-            if (!provider) { alert('Please select a provider.'); return; }
-
-            const newPaymentMethod = {
-                id: 'pm_' + Date.now(),
-                provider: provider,
-                accountName: accountName,
-                accountNumber: accountNumber,
-                phoneNumber: phoneNumber
-            };
-
-            const methods = getStoredPaymentMethods();
-            methods.push(newPaymentMethod);
-            saveStoredPaymentMethods(methods);
-
-            tg.sendData(JSON.stringify({ action: "add_payment_method", method: newPaymentMethod }));
-
-            document.getElementById('pmProvider').value = '';
-            document.getElementById('pmAccountNumber').value = '';
-            document.getElementById('pmPhoneNumber').value = '';
-
-            renderSavedPaymentMethods();
-            alert('Payment method saved successfully!');
-        }
-
-        function deletePaymentMethod(id) {
-            let methods = getStoredPaymentMethods();
-            methods = methods.filter(m => m.id !== id);
-            saveStoredPaymentMethods(methods);
-            renderSavedPaymentMethods();
-        }
-
-        function deleteAd(id) {
-            let userAds = getStoredAds();
-            userAds = userAds.filter(a => a.id !== id);
-            saveStoredAds(userAds);
-            renderMyAds();
-            renderHomeAds();
-        }
-
-        function populateUserInfo() {
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                const user = tg.initDataUnsafe.user;
-                const name = (user.first_name || '') + ' ' + (user.last_name || '');
-                const formattedName = name.trim() || 'Temesigen Akililu lema';
-                
-                document.getElementById('profFullName').innerText = formattedName;
-                document.getElementById('profUsername').innerText = user.username ? '@' + user.username : '@username';
-                document.getElementById('profAvatar').innerText = (user.first_name || 'T').charAt(0).toUpperCase();
-                document.getElementById('profInfoName').innerHTML = `${formattedName} <i class="fa-solid fa-pen edit-icon" onclick="editProfileField('Full Name')"></i>`;
-                document.getElementById('pmAccountName').value = formattedName;
-            }
-        }
-
-        function selectAdType(type) {
-            selectedType = type;
-            const buyBtn = document.getElementById('typeBuyBtn');
-            const sellBtn = document.getElementById('typeSellBtn');
-
-            if (type === 'buy') {
-                buyBtn.className = 'type-btn active-buy';
-                sellBtn.className = 'type-btn';
-            } else {
-                sellBtn.className = 'type-btn active-sell';
-                buyBtn.className = 'type-btn';
-            }
-        }
-
-        function handleDeposit() { document.getElementById('depositModal').classList.add('active'); }
-        function closeDepositModal() { document.getElementById('depositModal').classList.remove('active'); }
-        function selectDepositNetwork(network) {
-            alert(`Selected deposit network: ${network}. Generating deposit address...`);
-            closeDepositModal();
-        }
-
-        function handleWithdraw() { document.getElementById('withdrawModal').classList.add('active'); }
-        function closeWithdrawModal() { document.getElementById('withdrawModal').classList.remove('active'); }
-        function selectWithdrawNetwork(network) {
-            alert(`Selected withdrawal network: ${network}. Please enter destination address.`);
-            closeWithdrawModal();
-        }
-
-        function handleHistory() { alert('Loading transaction history...'); }
-        function refreshWallet() { 
-            updateWalletDisplay();
-            alert('Wallet balance refreshed.'); 
-        }
-        function refreshDeposit() { alert('Refreshing deposit channels...'); }
-        function refreshWithdraw() { alert('Refreshing withdrawal channels...'); }
-        function toggleOnlineStatus() { const isOnline = document.getElementById('keepOnlineToggle').checked; console.log('Online status:', isOnline); }
-
-        function openMoreOption(option) {
-            if (option === 'security') {
-                alert('Security settings: Manage your secret code and 2FA here.');
-            } else if (option === 'referral_program') {
-                alert('Referral Program: Share your link to invite friends.');
-            } else if (option === 'contact_center') {
-                alert('Contact Center: Reach out to support');
-            }
-        }
-
-        renderHomeAds();
-        renderMyAds();
-        updateWalletDisplay();
-    </script>
+    <div class="amount-input-row">
+      <input type="number" id="tradeAmount" step="0.0001" placeholder="0.0000" value="${a.amount}" max="${a.amount}" oninput="updateTradeTotal()">
+      <span class="amount-unit">BTC</span>
+    </div>
+    <div class="limit-hint">Available ${fmtBTC(a.amount)} &middot; Limit ${fmtUSD(a.minUsd)} - ${fmtUSD(a.maxUsd)}</div>
+    <div class="info-box">
+      <div class="row"><span class="l">Payment method</span><span class="v">${a.method}</span></div>
+      <div class="row"><span class="l">Seller</span><span class="v">${state.users[seller].name}</span></div>
+    </div>
+    <div class="total-row"><span>You'll ${a.side==='sell'?'pay':'receive'}</span><b id="tradeTotal">${fmtUSD(a.amount*a.price)}</b></div>
+    <button class="place-btn ${a.side==='sell'?'buy':'sell'}" onclick="confirmOpenTrade()">Place order — lock escrow</button>
+  `;
+}
+function updateTradeTotal(){
+  const amt = parseFloat(document.getElementById('tradeAmount').value)||0;
+  document.getElementById('tradeTotal').textContent = fmtUSD(amt*state.activeAd.price);
+}
+function confirmOpenTrade(){
+  const a = state.activeAd;
+  const amt = parseFloat(document.getElementById('tradeAmount').value);
+  if(!amt || amt<=0 || amt>a.amount){ alert('Enter a valid amount up to what is available.'); return; }
+
+  const seller = a.side==='sell' ? a.user : state.currentUser;
+  const buyer  = a.side==='sell' ? state.currentUser : a.user;
+  const sw = state.users[seller].btc;
+  if(sw.available < amt){ alert(state.users[seller].name+' does not have enough available BTC to lock into escrow.'); return; }
+
+  sw.available -= amt; sw.locked += amt;
+  const order = {
+    id:'order-'+state.seq++, side:a.side, seller, buyer, amount:amt, price:a.price, method:a.method,
+    status:'escrow', log:[], createdAt:Date.now(), deadline:Date.now()+PAYMENT_WINDOW_SECONDS*1000
+  };
+  pushLog(order, `Order opened. ${fmtBTC(amt)} locked into escrow from ${state.users[seller].name}.`);
+  state.orders.push(order);
+
+  // reduce or remove the ad
+  a.amount -= amt;
+  if(a.amount <= 0.00001) state.ads = state.ads.filter(x=>x.id!==a.id);
+
+  state.activeOrder = order;
+  document.getElementById('sheetTitle').textContent = 'Order '+order.id;
+  render();
+}
+
+/* ================= trade modal: order detail / lifecycle ================= */
+function openOrderDetail(orderId){
+  state.activeOrder = state.orders.find(o=>o.id===orderId);
+  state.activeAd = null;
+  document.getElementById('sheetTitle').textContent = 'Order '+state.activeOrder.id;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  renderOrderModal(state.activeOrder);
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.add('hidden');
+  state.activeOrder = null;
+  state.activeAd = null;
+  render();
+}
+function renderOrderModal(o){
+  if(document.getElementById('modalOverlay').classList.contains('hidden')) return;
+  const isSeller = o.seller===state.currentUser;
+  const isBuyer = o.buyer===state.currentUser;
+  const idx = stepIndex(o.status);
+
+  let timerHtml='';
+  if(o.status==='escrow' && o.deadline){
+    const remaining=(o.deadline-Date.now())/1000;
+    const urgent = remaining<=20;
+    timerHtml = `<div class="timer-banner ${urgent?'urgent':''}">
+      <span class="label">Payment window &mdash; auto-cancels if unpaid</span>
+      <span class="clock">${fmtClock(remaining)}</span>
+    </div>`;
+  }
+
+  const stepsHtml = o.status==='cancelled' ? '' : `
+    <div class="steps">
+      ${STEPS.map((s,i)=>{
+        const cls = (o.status==='disputed'&&i>1) ? '' : (i<idx?'done':(i===idx?'active':''));
+        return `<div class="step2 ${cls}"><div class="d"></div><div class="lab">${STEP_LABELS[s]}</div></div>`;
+      }).join('')}
+    </div>`;
+
+  let actions = '';
+  if(o.status==='escrow' && isBuyer) actions += `<button class="action-btn primary" onclick="markPaid('${o.id}')">I've sent payment</button>`;
+  if(o.status==='payment_sent' && isSeller) actions += `<button class="action-btn green" onclick="releaseEscrow('${o.id}')">Confirm received — release BTC</button>`;
+  if(o.status==='escrow' && isSeller) actions += `<button class="action-btn outline" onclick="cancelOrder('${o.id}')">Cancel &amp; unlock</button>`;
+  if(['escrow','payment_sent'].includes(o.status)) actions += `<button class="action-btn danger-outline" onclick="raiseDispute('${o.id}')">Raise dispute</button>`;
+  if(o.status==='disputed'){
+    actions += `<button class="action-btn green" onclick="resolveDispute('${o.id}','buyer')">Resolve &rarr; release to buyer</button>`;
+    actions += `<button class="action-btn danger-outline" onclick="resolveDispute('${o.id}','seller')">Resolve &rarr; refund seller</button>`;
+  }
+
+  document.getElementById('sheetBody').innerHTML = `
+    ${timerHtml}
+    ${stepsHtml}
+    ${o.status==='cancelled' ? '<div class="empty-state" style="padding:20px 0;">This order was cancelled. Escrow was returned to the seller.</div>' : ''}
+    <div class="info-box">
+      <div class="row"><span class="l">Seller</span><span class="v">${state.users[o.seller].name}</span></div>
+      <div class="row"><span class="l">Buyer</span><span class="v">${state.users[o.buyer].name}</span></div>
+      <div class="row"><span class="l">Amount</span><span class="v">${fmtBTC(o.amount)}</span></div>
+      <div class="row"><span class="l">Price</span><span class="v">${fmtUSD(o.price)}/BTC</span></div>
+      <div class="row"><span class="l">Total</span><span class="v">${fmtUSD(o.amount*o.price)}</span></div>
+      <div class="row"><span class="l">Payment</span><span class="v">${o.method}</span></div>
+    </div>
+    ${actions}
+    <div class="log2">${o.log.map(l=>`<div><span class="t">${l.t}</span>${l.msg}</div>`).join('')}</div>
+  `;
+}
+
+function markPaid(orderId){
+  const o = state.orders.find(x=>x.id===orderId);
+  o.status='payment_sent'; o.deadline=null;
+  pushLog(o, `${state.users[o.buyer].name} marked payment as sent.`);
+  render();
+}
+function releaseEscrow(orderId){
+  const o = state.orders.find(x=>x.id===orderId);
+  state.users[o.seller].btc.locked -= o.amount;
+  state.users[o.buyer].btc.available += o.amount;
+  o.status='released';
+  pushLog(o, `${state.users[o.seller].name} confirmed payment and released ${fmtBTC(o.amount)}.`);
+  render();
+}
+function cancelOrder(orderId){
+  const o = state.orders.find(x=>x.id===orderId);
+  state.users[o.seller].btc.locked -= o.amount;
+  state.users[o.seller].btc.available += o.amount;
+  o.status='cancelled'; o.deadline=null;
+  pushLog(o, `Trade cancelled by seller. Escrow unlocked.`);
+  render();
+}
+function autoCancelOrder(o){
+  state.users[o.seller].btc.locked -= o.amount;
+  state.users[o.seller].btc.available += o.amount;
+  o.status='cancelled'; o.deadline=null;
+  pushLog(o, `Payment window expired. Auto-cancelled, escrow returned to ${state.users[o.seller].name}.`);
+}
+function raiseDispute(orderId){
+  const o = state.orders.find(x=>x.id===orderId);
+  o.status='disputed';
+  pushLog(o, `Dispute raised. Escrow frozen pending resolution.`);
+  render();
+}
+function resolveDispute(orderId, winner){
+  const o = state.orders.find(x=>x.id===orderId);
+  state.users[o.seller].btc.locked -= o.amount;
+  if(winner==='buyer'){
+    state.users[o.buyer].btc.available += o.amount;
+    o.status='released';
+    pushLog(o, `Dispute resolved for buyer. ${fmtBTC(o.amount)} released.`);
+  } else {
+    state.users[o.seller].btc.available += o.amount;
+    o.status='cancelled';
+    pushLog(o, `Dispute resolved for seller. Escrow refunded.`);
+  }
+  render();
+}
+function removeAd(adId){
+  state.ads = state.ads.filter(a=>a.id!==adId);
+  render();
+}
+
+/* ================= ticking countdown ================= */
+function tick(){
+  let changed=false;
+  state.orders.forEach(o=>{
+    if(o.status==='escrow' && o.deadline && Date.now()>=o.deadline){ autoCancelOrder(o); changed=true; }
+  });
+  const hasLiveTimer = state.orders.some(o=>o.status==='escrow'&&o.deadline);
+  if(changed || hasLiveTimer) render();
+}
+setInterval(tick,1000);
+
+/* ================= wire up static controls ================= */
+document.getElementById('postAdBtn').addEventListener('click', ()=>{
+  const side = document.getElementById('adSide').value;
+  const amount = parseFloat(document.getElementById('adAmount').value);
+  const price = parseFloat(document.getElementById('adPrice').value);
+  const method = document.getElementById('adMethod').value.trim() || 'Bank transfer';
+  if(!amount||amount<=0||!price||price<=0){ alert('Enter a valid amount and price.'); return; }
+  if(side==='sell' && state.users[state.currentUser].btc.available < amount){ alert('Not enough available BTC to post this sell offer.'); return; }
+  state.ads.push({id:'ad-'+state.seq++, side, user:state.currentUser, amount, price, method, minUsd:Math.round(amount*price*0.1), maxUsd:Math.round(amount*price)});
+  document.getElementById('adAmount').value=''; document.getElementById('adPrice').value=''; document.getElementById('adMethod').value='';
+  render();
+});
+document.getElementById('userSelect').addEventListener('change', e=>{ state.currentUser=e.target.value; render(); });
+document.getElementById('resetBtn').addEventListener('click', ()=>{ location.reload(); });
+
+render();
+</script>
 </body>
 </html>
