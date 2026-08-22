@@ -217,6 +217,8 @@
   .wallet-activity-row .wa-act-amt{font-size:13.5px; font-weight:700;}
   .wallet-activity-row .wa-act-amt.pos{color:var(--green-dark);}
   .wallet-activity-row .wa-act-amt.neg{color:var(--red);}
+  .wa-suggest-row{display:flex; flex-wrap:wrap; gap:8px; margin:-4px 0 14px;}
+  .wa-suggest-chip{font-size:12px; font-weight:600; color:var(--black); background:#F5F5F5; padding:6px 12px; border-radius:14px; cursor:pointer;}
 
   /* ---- ads (my ads) tab ---- */
   .post-box{margin:14px 16px; border:1px solid var(--line); border-radius:12px; padding:14px;}
@@ -1004,9 +1006,12 @@ function renderWalletActionForm(type){
     recipientHtml = `
       <div class="form-row">
         <div class="field" style="flex:1;">
-          <label>Transfer to</label>
-          <select id="waTarget">${others.map(k=>`<option value="${k}">${state.users[k].name}</option>`).join('')}</select>
+          <label>Transfer to (username, ID, or email)</label>
+          <input type="text" id="waTargetInput" placeholder="Enter any Vault user">
         </div>
+      </div>
+      <div class="wa-suggest-row">
+        ${others.map(k=>`<span class="wa-suggest-chip" onclick="document.getElementById('waTargetInput').value=${JSON.stringify(state.users[k].name)}">${state.users[k].name}</span>`).join('')}
       </div>`;
   }
   const networkHtml = type==='transfer' ? '' : `
@@ -1058,6 +1063,17 @@ function updateBalanceHint(){
   const bal = getCoinBalance(state.users[state.currentUser], coinCode);
   hintEl.textContent = `Available ${bal.available.toFixed(coinDecimals(coinCode))} ${coinCode}`;
 }
+function resolveTransferTarget(raw){
+  const q = (raw||'').trim();
+  if(!q) return null;
+  const found = Object.keys(state.users).find(k=>
+    k.toLowerCase()===q.toLowerCase() || state.users[k].name.toLowerCase()===q.toLowerCase()
+  );
+  if(found) return found;
+  const slug = 'u_' + q.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') + '_' + (state.seq++);
+  state.users[slug] = { name:q, bot:false, external:true, usdt:{available:0, locked:0}, etb:0 };
+  return slug;
+}
 function confirmWalletAction(type){
   const u = state.users[state.currentUser];
   const coinCode = document.getElementById('waCoin').value;
@@ -1075,9 +1091,12 @@ function confirmWalletAction(type){
     bal.available -= amt;
     state.walletActivity.push({id:'wa-'+state.seq++, label:`Withdraw (${network})`, amount:amt, unit:coinCode, dir:'out', time:Date.now()});
   } else if(type==='transfer'){
-    const target = document.getElementById('waTarget').value;
+    const targetRaw = document.getElementById('waTargetInput').value;
+    const targetKey = resolveTransferTarget(targetRaw);
+    if(!targetKey){ alert('Enter a username, ID, or email to transfer to.'); return; }
+    if(targetKey===state.currentUser){ alert("You can't transfer to yourself."); return; }
     if(amt>bal.available){ alert('Amount exceeds your available balance.'); return; }
-    const t = state.users[target];
+    const t = state.users[targetKey];
     const tbal = getCoinBalance(t, coinCode);
     bal.available -= amt;
     tbal.available += amt;
