@@ -217,8 +217,56 @@
   .wallet-activity-row .wa-act-amt{font-size:13.5px; font-weight:700;}
   .wallet-activity-row .wa-act-amt.pos{color:var(--green-dark);}
   .wallet-activity-row .wa-act-amt.neg{color:var(--red);}
+  .wa-pending-badge{font-size:10px; font-weight:700; color:#A87900; background:#FFF6DE; padding:2px 7px; border-radius:8px; margin-left:4px;}
+  .wa-approve-link{color:var(--blue); font-weight:600; cursor:pointer;}
   .wa-suggest-row{display:flex; flex-wrap:wrap; gap:8px; margin:-4px 0 14px;}
   .wa-suggest-chip{font-size:12px; font-weight:600; color:var(--black); background:#F5F5F5; padding:6px 12px; border-radius:14px; cursor:pointer;}
+
+  /* ---- deposit detail (QR / address) screen ---- */
+  .dep-topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 16px 8px;}
+  .dep-topbar .back{font-size:24px; color:var(--black); width:24px; cursor:pointer; line-height:1;}
+  .dep-title{font-size:16.5px; font-weight:800;}
+  .dep-icons{display:flex; align-items:center; gap:16px; color:var(--black);}
+  .dep-icons svg{width:19px; height:19px;}
+  .dep-qr-wrap{display:flex; justify-content:center; padding:18px 16px 6px;}
+  .dep-demo-banner{
+    margin:10px 16px 0; background:#FFF8E6; border:1px solid #FCE9B6; color:#8A6100; font-size:11.5px; line-height:1.5;
+    padding:10px 12px; border-radius:10px;
+  }
+  .dep-demo-banner code{background:rgba(0,0,0,.06); padding:1px 5px; border-radius:4px; font-size:11px;}
+  .dep-qr-box{
+    width:230px; height:230px; background:#F3F4F6; border-radius:16px; display:flex; align-items:center; justify-content:center; padding:14px;
+  }
+  .dep-qr-box img, .dep-qr-box canvas{width:100%; height:100%;}
+  .dep-field{padding:16px 16px 4px;}
+  .dep-field-top{display:flex; align-items:center; justify-content:space-between;}
+  .dep-label{font-size:13px; color:var(--gray);}
+  .dep-value{font-size:16px; font-weight:700; color:var(--black); margin-top:4px; word-break:break-all;}
+  .dep-address{margin-top:6px; font-size:15px;}
+  .dep-icon-btn{
+    width:34px; height:34px; border-radius:50%; background:#F5F5F5; display:flex; align-items:center; justify-content:center;
+    color:var(--black); cursor:pointer; flex-shrink:0;
+  }
+  .dep-icon-btn svg{width:16px; height:16px;}
+  .dep-more{
+    text-align:center; font-size:13px; color:var(--gray); font-weight:600; padding:14px 0 6px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:4px;
+  }
+  .dep-more-panel{margin:0 16px 6px; border:1px solid var(--line); border-radius:10px; padding:10px 14px;}
+  .dep-more-row{display:flex; justify-content:space-between; font-size:12.5px; color:var(--gray); padding:5px 0;}
+  .dep-more-row span:last-child{color:var(--black); font-weight:600;}
+  .dep-submit-section{padding:14px 16px 24px;}
+  .dep-hint{font-size:11px; color:var(--gray-light); margin-top:10px; line-height:1.5; text-align:center;}
+  .dep-toast{
+    position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); background:#2B2F36; color:#fff; font-size:13px;
+    font-weight:600; padding:12px 20px; border-radius:10px; display:flex; align-items:center; gap:8px; z-index:30;
+    box-shadow:0 8px 24px rgba(0,0,0,.25);
+  }
+  #screen-deposit-detail{position:relative;}
+  .dep-toast.hidden{display:none;}
+  .dep-toast-check{
+    width:18px; height:18px; border-radius:50%; border:1.5px solid #fff; display:flex; align-items:center; justify-content:center; font-size:11px;
+  }
 
   /* ---- ads (my ads) tab ---- */
   .post-box{margin:14px 16px; border:1px solid var(--line); border-radius:12px; padding:14px;}
@@ -514,6 +562,87 @@
           <div id="walletActivityList"></div>
         </div>
 
+        <!-- ============ DEPOSIT DETAIL SUB-SCREEN ============ -->
+        <div class="screen hidden" id="screen-deposit-detail">
+          <div class="dep-topbar">
+            <span class="back" onclick="closeDepositScreen()">&#8249;</span>
+            <span class="dep-title" id="depTitle">Deposit USDT</span>
+            <div class="dep-icons">
+              <span onclick="depositHelp()" style="cursor:pointer;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 1-1 1.9" stroke-width="1.6"/><circle cx="12" cy="16.5" r=".6" fill="currentColor" stroke="none"/></svg>
+              </span>
+              <span onclick="switchTab('wallet')" style="cursor:pointer;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v6h6"/><path d="M4.6 15a8 8 0 1 0 2-8.4L4 10"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="dep-demo-banner hidden" id="depDemoBanner">
+            &#9888; Demo address — same for every user. Connect a deposit-address API (see <code>DEPOSIT_API_BASE</code>) for a real, per-user address.
+          </div>
+
+          <div class="dep-qr-wrap"><div class="dep-qr-box" id="depositQr"></div></div>
+
+          <div class="dep-field">
+            <div class="dep-field-top">
+              <span class="dep-label">Network</span>
+              <span class="dep-icon-btn" onclick="openNetworkPicker()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>
+              </span>
+            </div>
+            <div class="dep-value" id="depNetworkValue">Tron(TRC20)</div>
+          </div>
+
+          <div class="dep-field">
+            <div class="dep-field-top">
+              <span class="dep-label">Deposit Address</span>
+            </div>
+            <div class="dep-field-top">
+              <span class="dep-value dep-address" id="depAddressValue">—</span>
+              <span class="dep-icon-btn" onclick="copyDepositAddress()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="dep-field hidden" id="depMemoRow">
+            <div class="dep-field-top">
+              <span class="dep-label">Memo / Tag <span style="color:var(--red);">(required)</span></span>
+            </div>
+            <div class="dep-field-top">
+              <span class="dep-value dep-address" id="depMemoValue">—</span>
+              <span class="dep-icon-btn" onclick="copyDepositMemo()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="dep-more" onclick="toggleMoreDetails()">
+            <span>More Details</span> <span id="depMoreChevron">&#9662;</span>
+          </div>
+          <div class="dep-more-panel hidden" id="depMorePanel">
+            <div class="dep-more-row"><span>Minimum deposit</span><span id="depMinAmt">1 USDT</span></div>
+            <div class="dep-more-row"><span>Network confirmations</span><span>20</span></div>
+            <div class="dep-more-row"><span>Est. arrival</span><span>~5 minutes</span></div>
+          </div>
+
+          <div class="dep-submit-section">
+            <div class="form-row">
+              <div class="field" style="flex:1;">
+                <label>Amount deposited</label>
+                <input type="number" id="depAmountInput" placeholder="0.00" step="0.000001">
+              </div>
+            </div>
+            <button class="post-submit" onclick="submitDepositForReview()">Submit for verification</button>
+            <div class="dep-hint">Once sent, tap Submit — your deposit is verified by our admin and credited after network confirmation.</div>
+          </div>
+
+          <div class="dep-toast hidden" id="copyToast">
+            <span class="dep-toast-check">&#10003;</span>
+            <span id="copyToastText">Copied successfully</span>
+          </div>
+        </div>
+
         <!-- ============ PROFILE TAB ============ -->
         <div class="screen hidden" id="screen-profile">
 
@@ -670,6 +799,7 @@
     </div>
   </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 /* ================= state ================= */
 const state = {
@@ -984,8 +1114,8 @@ function renderWallet(){
   document.getElementById('walletActivityList').innerHTML = acts.length ? acts.map(a=>`
     <div class="wallet-activity-row">
       <div>
-        <div class="wa-act-label">${a.label}</div>
-        <div class="wa-act-time">${fmtOrderTime(a.time)}</div>
+        <div class="wa-act-label">${a.label}${a.pending ? ' <span class="wa-pending-badge">Pending</span>' : ''}</div>
+        <div class="wa-act-time">${fmtOrderTime(a.time)}${a.pending ? ` &middot; <span class="wa-approve-link" onclick="approveDeposit('${a.id}')">Simulate admin approval</span>` : ''}</div>
       </div>
       <div class="wa-act-amt ${a.dir==='in'?'pos':'neg'}">${a.dir==='in'?'+':'-'}${mask(a.amount.toFixed(coinDecimals(a.unit))+' '+a.unit)}</div>
     </div>
@@ -994,10 +1124,31 @@ function renderWallet(){
 
 function walletAction(type){
   state.activeAd = null; state.activeOrder = null;
-  const titles = {deposit:'Deposit', withdraw:'Withdraw', transfer:'Transfer'};
+  if(type==='deposit'){
+    document.getElementById('sheetTitle').textContent = 'Deposit';
+    document.getElementById('modalOverlay').classList.remove('hidden');
+    document.getElementById('sheetBody').innerHTML = `
+      <div class="form-row">
+        <div class="field" style="flex:1;">
+          <label>Coin</label>
+          <select id="waCoin">
+            ${COINS.map(c=>`<option value="${c.code}">${c.code} — ${c.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <button class="post-submit" onclick="proceedToDepositDetail()">Continue</button>
+    `;
+    return;
+  }
+  const titles = {withdraw:'Withdraw', transfer:'Transfer'};
   document.getElementById('sheetTitle').textContent = titles[type];
   document.getElementById('modalOverlay').classList.remove('hidden');
   renderWalletActionForm(type);
+}
+function proceedToDepositDetail(){
+  const coinCode = document.getElementById('waCoin').value;
+  closeModal();
+  openDepositScreen(coinCode);
 }
 function renderWalletActionForm(type){
   let recipientHtml = '';
@@ -1063,6 +1214,255 @@ function updateBalanceHint(){
   const bal = getCoinBalance(state.users[state.currentUser], coinCode);
   hintEl.textContent = `Available ${bal.available.toFixed(coinDecimals(coinCode))} ${coinCode}`;
 }
+
+/* ================= deposit address screen ================= */
+const NETWORK_KEY = {
+  'TRC20 (Tron)':'TRC20', 'ERC20 (Ethereum)':'ERC20', 'BEP20 (BNB Smart Chain)':'BEP20',
+  'Arbitrum One':'ARBITRUM', 'Optimism':'OPTIMISM', 'BEP2 (BNB Beacon Chain)':'BEP2',
+  'DOGE (Dogecoin Chain)':'DOGE', 'TON':'TON', 'Bitcoin (BTC)':'BTC'
+};
+const NETWORK_SHORT_LABEL = {
+  TRC20:'Tron(TRC20)', ERC20:'Ethereum(ERC20)', BEP20:'BNB Smart Chain(BEP20)',
+  ARBITRUM:'Arbitrum One', OPTIMISM:'Optimism', BEP2:'BNB Beacon Chain(BEP2)',
+  DOGE:'Dogecoin', TON:'TON', BTC:'Bitcoin'
+};
+const ADDRESS_BOOK = {
+  TRC20:'TBa3CCHR33xXytAdvVUyutgJ7QDsNkabqm',
+  ERC20:'0x118e7f44eB5b7baCdf4cb7915671091148452a5f',
+  BEP20:'0x118e7f44eB5b7baCdf4cb7915671091148452a5f',
+  ARBITRUM:'0x118e7f44eB5b7baCdf4cb7915671091148452a5f',
+  OPTIMISM:'0x118e7f44eB5b7baCdf4cb7915671091148452a5f',
+  BEP2:'bnb1x9y8z7w6v5u4t3s2r1q0p9o8n7m6l5k4j3h2',
+  DOGE:'DQA9r6z6t3s8u2v1w0x9y8z7a6b5c4d3e2f1g0h',
+  TON:'EQAbc123def456ghi789jkl012mno345pqr678stu9',
+  BTC:'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+};
+
+/* Admin gets notified over Telegram (chat id 8216936710) when someone submits a deposit
+   for review. Sending a real Telegram message requires a bot token, which isn't set here —
+   plug one in below to make this live; until then, submissions are simulated and logged. */
+const TELEGRAM_BOT_TOKEN = '';
+const TELEGRAM_ADMIN_CHAT_ID = '8216936710';
+async function notifyAdminTelegram(text){
+  if(!TELEGRAM_BOT_TOKEN){
+    console.warn('[Telegram] Bot token not set — simulating admin notification:\n' + text);
+    return {ok:false, simulated:true};
+  }
+  try{
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:TELEGRAM_ADMIN_CHAT_ID, text})
+    });
+    return await res.json();
+  } catch(e){
+    console.error('[Telegram] notify failed', e);
+    return {ok:false, error:String(e)};
+  }
+}
+
+/* ================================================================
+   DEPOSIT ADDRESS BACKEND CONTRACT
+   ================================================================
+   Right now ADDRESS_BOOK below hands out the SAME address to every
+   user for a given coin/network — fine for a visual mockup, unsafe
+   for real money (two people depositing to the same TRC20 address
+   is unattributable). A real backend must generate a UNIQUE address
+   (or address+memo) per user per coin/network and watch the chain
+   to credit the right account.
+
+   Set DEPOSIT_API_BASE to a real backend origin (e.g.
+   'https://api.yourapp.com') to switch this screen from demo mode
+   to live mode. When set, the app calls:
+
+     GET {DEPOSIT_API_BASE}/deposit-address
+         ?userId=<string>&coin=<USDT|ETH|BNB|DOGE|TON|BTC>&network=<network label>
+
+     200 response body (JSON):
+       {
+         "address": "TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",  // required
+         "memo": "123456",                                  // optional — only for
+                                                              // memo-based chains
+         "minDeposit": "1.00",                               // optional, string
+         "confirmationsRequired": 20                         // optional, number
+       }
+
+     Non-200 / network error → the UI falls back to the shared demo
+     address below and shows an amber "Demo address" banner so it's
+     never silently mistaken for a real, user-specific address.
+
+   Left empty (''), the app stays in demo mode everywhere.
+   See deposit-api-stub.js (delivered alongside this file) for a
+   minimal reference implementation of this endpoint.
+   ================================================================ */
+const DEPOSIT_API_BASE = ''; // e.g. 'https://api.yourapp.com' — empty = demo mode
+
+async function fetchDepositAddress(userId, coinCode, networkLabel){
+  if(!DEPOSIT_API_BASE){
+    return { ...demoDepositAddress(coinCode, networkLabel), demo:true };
+  }
+  try{
+    const url = `${DEPOSIT_API_BASE}/deposit-address?userId=${encodeURIComponent(userId)}&coin=${encodeURIComponent(coinCode)}&network=${encodeURIComponent(networkLabel)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    if(!data || !data.address) throw new Error('Malformed response — missing address');
+    return { address:data.address, memo:data.memo||null, minDeposit:data.minDeposit||null, demo:false };
+  } catch(e){
+    console.warn('[deposit-address] backend unavailable, falling back to demo address:', e);
+    return { ...demoDepositAddress(coinCode, networkLabel), demo:true };
+  }
+}
+function demoDepositAddress(coinCode, networkLabel){
+  const key = NETWORK_KEY[networkLabel] || networkLabel;
+  return { address: ADDRESS_BOOK[key] || ADDRESS_BOOK.ERC20, memo:null, minDeposit:null };
+}
+
+function openDepositScreen(coinCode){
+  const coin = COINS.find(c=>c.code===coinCode);
+  state.depositCoin = coinCode;
+  state.depositNetwork = coin.networks[0];
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('screen-deposit-detail').classList.remove('hidden');
+  document.getElementById('depMorePanel').classList.add('hidden');
+  document.getElementById('depMoreChevron').innerHTML = '&#9662;';
+  renderDepositDetail();
+}
+function closeDepositScreen(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('screen-wallet').classList.remove('hidden');
+  renderWallet();
+}
+function depositAddressFor(coinCode, networkLabel){
+  // kept for the Telegram admin-notify message; always reflects what's on screen
+  return state.depositAddressCache ? state.depositAddressCache.address : demoDepositAddress(coinCode, networkLabel).address;
+}
+async function renderDepositDetail(){
+  const coinCode = state.depositCoin;
+  const networkLabel = state.depositNetwork;
+  const key = NETWORK_KEY[networkLabel] || networkLabel;
+
+  document.getElementById('depTitle').textContent = 'Deposit ' + coinCode;
+  document.getElementById('depNetworkValue').textContent = NETWORK_SHORT_LABEL[key] || networkLabel;
+  document.getElementById('depAddressValue').textContent = 'Loading address…';
+  document.getElementById('depMinAmt').textContent = (coinCode==='USDT' ? '1 USDT' : '0.001 ' + coinCode);
+  const qrBox = document.getElementById('depositQr');
+  qrBox.innerHTML = `<div style="font-size:12px;color:var(--gray-light);">Loading…</div>`;
+  const banner = document.getElementById('depDemoBanner');
+  if(banner) banner.classList.add('hidden');
+
+  const requestId = (state._depReqId = (state._depReqId||0) + 1);
+  const result = await fetchDepositAddress(state.currentUser, coinCode, networkLabel);
+  if(requestId !== state._depReqId) return; // a newer request (network switch) superseded this one
+
+  state.depositAddressCache = result;
+  document.getElementById('depAddressValue').textContent = result.address;
+  if(result.minDeposit) document.getElementById('depMinAmt').textContent = `${result.minDeposit} ${coinCode}`;
+
+  if(banner){
+    banner.classList.toggle('hidden', !result.demo);
+  }
+
+  let memoHtml = '';
+  const memoRow = document.getElementById('depMemoRow');
+  if(result.memo){
+    document.getElementById('depMemoValue').textContent = result.memo;
+    memoRow.classList.remove('hidden');
+  } else if(memoRow){
+    memoRow.classList.add('hidden');
+  }
+
+  qrBox.innerHTML = '';
+  if(window.QRCode){
+    new QRCode(qrBox, { text: result.address, width:196, height:196, colorDark:'#000000', colorLight:'#F3F4F6' });
+  } else {
+    qrBox.innerHTML = `<div style="font-size:11px;color:var(--gray-light);text-align:center;padding:20px;">QR unavailable offline<br>${result.address}</div>`;
+  }
+}
+function openNetworkPicker(){
+  const coin = COINS.find(c=>c.code===state.depositCoin);
+  state.activeAd = null; state.activeOrder = null;
+  document.getElementById('sheetTitle').textContent = 'Select Network';
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  document.getElementById('sheetBody').innerHTML = coin.networks.map(n=>{
+    const key = NETWORK_KEY[n] || n;
+    return `<div class="list-row" onclick="pickDepositNetwork('${n.replace(/'/g,"\\'")}')" style="border-bottom:1px solid var(--line);">
+      <span class="li-label">${NETWORK_SHORT_LABEL[key] || n}</span>
+      ${n===state.depositNetwork ? '<span class="li-chev" style="color:var(--green-dark);">&#10003;</span>' : ''}
+    </div>`;
+  }).join('');
+}
+function pickDepositNetwork(networkLabel){
+  state.depositNetwork = networkLabel;
+  closeModal();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('screen-deposit-detail').classList.remove('hidden');
+  renderDepositDetail();
+}
+function copyDepositAddress(){
+  copyTextToClipboard(document.getElementById('depAddressValue').textContent);
+}
+function copyDepositMemo(){
+  copyTextToClipboard(document.getElementById('depMemoValue').textContent);
+}
+function copyTextToClipboard(text){
+  const doToast = ()=>showDepositToast('Copied successfully');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(doToast).catch(doToast);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    doToast();
+  }
+}
+function showDepositToast(msg){
+  const toast = document.getElementById('copyToast');
+  document.getElementById('copyToastText').textContent = msg;
+  toast.classList.remove('hidden');
+  clearTimeout(showDepositToast._t);
+  showDepositToast._t = setTimeout(()=>toast.classList.add('hidden'), 1600);
+}
+function toggleMoreDetails(){
+  const panel = document.getElementById('depMorePanel');
+  const open = panel.classList.toggle('hidden');
+  document.getElementById('depMoreChevron').innerHTML = open ? '&#9662;' : '&#9652;';
+}
+function depositHelp(){
+  const key = NETWORK_KEY[state.depositNetwork] || state.depositNetwork;
+  alert(`Only send ${state.depositCoin} (${NETWORK_SHORT_LABEL[key]||state.depositNetwork}) to this address. Sending any other asset or using the wrong network may result in permanent loss of funds.`);
+}
+async function submitDepositForReview(){
+  const coinCode = state.depositCoin;
+  const networkLabel = state.depositNetwork;
+  const address = depositAddressFor(coinCode, networkLabel);
+  const amt = parseFloat(document.getElementById('depAmountInput').value);
+  if(!amt || amt<=0){ alert('Enter the amount you deposited.'); return; }
+
+  const u = state.users[state.currentUser];
+  const activityId = 'wa-'+state.seq++;
+  state.walletActivity.push({
+    id:activityId, label:`Deposit submitted for admin review (${networkLabel})`,
+    amount:amt, unit:coinCode, dir:'in', time:Date.now(), pending:true
+  });
+
+  const msg = `New deposit submitted for review\nUser: ${u.name}\nCoin: ${coinCode}\nNetwork: ${networkLabel}\nAmount: ${amt} ${coinCode}\nDeposit address: ${address}`;
+  const result = await notifyAdminTelegram(msg);
+
+  document.getElementById('depAmountInput').value = '';
+  showDepositToast(result && result.simulated ? 'Submitted (admin notify simulated)' : 'Sent to admin for verification');
+  renderWallet();
+}
+function approveDeposit(activityId){
+  const item = state.walletActivity.find(a=>a.id===activityId);
+  if(!item || !item.pending) return;
+  const bal = getCoinBalance(state.users[state.currentUser], item.unit);
+  bal.available += item.amount;
+  item.pending = false;
+  item.label = item.label.replace('submitted for admin review', 'approved by admin');
+  renderWallet();
+}
+
 function resolveTransferTarget(raw){
   const q = (raw||'').trim();
   if(!q) return null;
