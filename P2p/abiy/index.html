@@ -182,6 +182,42 @@
     padding:14px; font-size:14.5px; font-weight:800; color:#000; cursor:pointer;
   }
 
+  /* ---- wallet screen ---- */
+  .wallet-topbar{display:flex; align-items:center; justify-content:space-between; padding:16px 16px 4px;}
+  .wallet-title{font-size:19px; font-weight:800;}
+  .wallet-icons{display:flex; align-items:center; gap:18px; color:var(--black);}
+  .wallet-icons svg{width:20px; height:20px;}
+  .wallet-balance-card{padding:14px 16px 6px;}
+  .wallet-balance-label{font-size:12.5px; color:var(--gray); display:flex; align-items:center; gap:3px; margin-bottom:8px;}
+  .wallet-balance-amount{font-size:30px; font-weight:800; letter-spacing:.2px; margin-bottom:4px;}
+  .wallet-balance-sub{font-size:12.5px; color:var(--gray-light); margin-bottom:16px;}
+  .wallet-action-row{display:flex; gap:10px;}
+  .wallet-action-btn{
+    flex:1; border:1px solid var(--line); background:#fff; border-radius:10px; padding:11px 0; font-size:13.5px;
+    font-weight:700; color:var(--black); cursor:pointer;
+  }
+  .wallet-action-btn.primary{background:var(--yellow); border-color:var(--yellow); color:#000;}
+  .wallet-assets-head{
+    padding:18px 16px 8px; font-size:14.5px; font-weight:800; display:flex; justify-content:space-between; align-items:center;
+  }
+  .wallet-asset-row{display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--line);}
+  .wallet-asset-row .wa-icon{
+    width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:12px; color:#fff; flex-shrink:0;
+  }
+  .wallet-asset-row .wa-info{flex:1;}
+  .wallet-asset-row .wa-code{font-size:14px; font-weight:700;}
+  .wallet-asset-row .wa-name{font-size:11.5px; color:var(--gray-light);}
+  .wallet-asset-row .wa-amounts{text-align:right;}
+  .wallet-asset-row .wa-avail{font-size:14px; font-weight:700;}
+  .wallet-asset-row .wa-locked{font-size:11px; color:var(--gray-light); margin-top:2px;}
+  .wallet-activity-row{padding:11px 16px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;}
+  .wallet-activity-row .wa-act-label{font-size:13px; font-weight:600;}
+  .wallet-activity-row .wa-act-time{font-size:11px; color:var(--gray-light); margin-top:2px;}
+  .wallet-activity-row .wa-act-amt{font-size:13.5px; font-weight:700;}
+  .wallet-activity-row .wa-act-amt.pos{color:var(--green-dark);}
+  .wallet-activity-row .wa-act-amt.neg{color:var(--red);}
+
   /* ---- ads (my ads) tab ---- */
   .post-box{margin:14px 16px; border:1px solid var(--line); border-radius:12px; padding:14px;}
   .post-box h3{font-size:13.5px; margin-bottom:10px;}
@@ -444,10 +480,36 @@
           <div id="myAdList"></div>
         </div>
 
-        <!-- ============ CHAT TAB ============ -->
-        <div class="screen hidden" id="screen-chat">
-          <div class="topnav"><span class="tab active" style="color:#1E2329;font-weight:800;">Chat</span></div>
-          <div class="empty-state">Trade chat opens automatically<br>from an active order.</div>
+        <!-- ============ WALLET TAB ============ -->
+        <div class="screen hidden" id="screen-wallet">
+          <div class="wallet-topbar">
+            <span class="wallet-title">Wallet</span>
+            <div class="wallet-icons">
+              <span onclick="toggleWalletVisibility()" style="cursor:pointer;">
+                <svg id="walletEyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </span>
+              <span onclick="switchTab('orders')" style="cursor:pointer;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="15" cy="16" r="3"/><path d="M15 15v1.4l1 .6"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="wallet-balance-card">
+            <div class="wallet-balance-label">Estimated Balance &#9662;</div>
+            <div class="wallet-balance-amount" id="walletEstBalance">0 ETB</div>
+            <div class="wallet-balance-sub" id="walletEstBalanceUsdt">&asymp; 0.00 USDT</div>
+            <div class="wallet-action-row">
+              <button class="wallet-action-btn primary" onclick="walletAction('deposit')">Deposit</button>
+              <button class="wallet-action-btn" onclick="walletAction('withdraw')">Withdraw</button>
+              <button class="wallet-action-btn" onclick="walletAction('transfer')">Transfer</button>
+            </div>
+          </div>
+
+          <div class="wallet-assets-head"><span>My Assets</span></div>
+          <div id="walletAssetList"></div>
+
+          <div class="wallet-assets-head" style="border-top:8px solid #FAFAFA; margin-top:6px;"><span>Recent Activity</span></div>
+          <div id="walletActivityList"></div>
         </div>
 
         <!-- ============ PROFILE TAB ============ -->
@@ -582,9 +644,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a2 2 0 0 0 2 2h1l2 5 2-1-1-4h6l4 3V6l-4 3H6a2 2 0 0 0-2 2z"/></svg>
           Ads
         </button>
-        <button data-tab="chat" onclick="switchTab('chat')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H8l-4 4z"/></svg>
-          Chat
+        <button data-tab="wallet" onclick="switchTab('wallet')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+          Wallet
         </button>
         <button data-tab="profile" onclick="switchTab('profile')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>
@@ -610,7 +672,9 @@
 /* ================= state ================= */
 const state = {
   users: {
-    you:{ name:'ABFAST', bot:false, usdt:{available:420, locked:0}, etb:832000 },
+    you:{ name:'ABFAST', bot:false, usdt:{available:420, locked:0}, etb:832000,
+          eth:{available:0.0842, locked:0}, bnb:{available:0, locked:0},
+          doge:{available:186.4, locked:0}, ton:{available:12.5, locked:0}, btc:{available:0, locked:0} },
     bob:{ name:'Bob', bot:true, usdt:{available:6000, locked:0}, etb:2368000 },
     carol:{ name:'Carol', bot:true, usdt:{available:7500, locked:0}, etb:1440000 },
     goro:{ name:'GoroXchange', bot:true, usdt:{available:12000, locked:0}, etb:4800000 },
@@ -639,6 +703,11 @@ const state = {
   ],
   seq:1,
   activeAd:null,
+  walletHidden:false,
+  walletActivity:[
+    {id:'wa-1', label:'Received USDT', amount:41.20, unit:'USDT', dir:'in', time:Date.now()-1000*60*60*26},
+    {id:'wa-2', label:'Escrow refund — order cancelled', amount:18.75, unit:'USDT', dir:'in', time:Date.now()-1000*60*60*72},
+  ],
   activeOrder:null,
 };
 const BOT_NAMES = ['bob','carol','goro'];
@@ -794,6 +863,7 @@ function render(){
   if(state.currentTab==='p2p') renderAdList();
   if(state.currentTab==='orders') renderOrderList();
   if(state.currentTab==='ads') renderMyAds();
+  if(state.currentTab==='wallet') renderWallet();
   if(state.currentTab==='profile') renderProfile();
   if(state.activeOrder) renderOrderModal(state.activeOrder);
 }
@@ -854,6 +924,167 @@ function renderMyAds(){
       <span class="myad-cancel" onclick="removeAd('${a.id}')">Remove offer</span>
     </div>
   `).join('');
+}
+
+/* ================= wallet ================= */
+const COINS = [
+  {code:'USDT', name:'Tether',    color:'#26A17B', networks:['TRC20 (Tron)','ERC20 (Ethereum)','BEP20 (BNB Smart Chain)']},
+  {code:'ETH',  name:'Ethereum',  color:'#627EEA', networks:['ERC20 (Ethereum)','Arbitrum One','Optimism']},
+  {code:'BNB',  name:'BNB',       color:'#F0B90B', networks:['BEP20 (BNB Smart Chain)','BEP2 (BNB Beacon Chain)']},
+  {code:'DOGE', name:'Dogecoin',  color:'#C2A633', networks:['DOGE (Dogecoin Chain)']},
+  {code:'TON',  name:'Toncoin',   color:'#0098EA', networks:['TON']},
+  {code:'BTC',  name:'Bitcoin',   color:'#F7931A', networks:['Bitcoin (BTC)','BEP20 (BNB Smart Chain)']},
+];
+const COIN_RATE_USDT = {USDT:1, ETH:3400, BNB:600, DOGE:0.12, TON:5.5, BTC:65000};
+
+function getCoinBalance(user, code){
+  const key = code.toLowerCase();
+  if(key==='usdt') return user.usdt;
+  if(!user[key]) user[key] = {available:0, locked:0};
+  return user[key];
+}
+function coinDecimals(code){ return code==='USDT' ? 2 : 6; }
+
+function toggleWalletVisibility(){
+  state.walletHidden = !state.walletHidden;
+  document.getElementById('walletEyeIcon').innerHTML = state.walletHidden
+    ? '<path d="M3 3l18 18"/><path d="M10.6 10.6a3 3 0 0 0 4.24 4.24"/><path d="M6.7 6.7C4.3 8.2 2.5 12 2.5 12s3.5 7 9.5 7c1.9 0 3.5-.5 4.9-1.3"/><path d="M17.3 17.3C19.7 15.8 21.5 12 21.5 12s-1.3-2.6-3.6-4.4"/>'
+    : '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>';
+  renderWallet();
+}
+function renderWallet(){
+  const u = state.users[state.currentUser];
+  const mask = v => state.walletHidden ? '••••••' : v;
+
+  let totalUsdt = 0;
+  COINS.forEach(c=>{
+    const bal = getCoinBalance(u, c.code);
+    totalUsdt += (bal.available+bal.locked) * (COIN_RATE_USDT[c.code]||0);
+  });
+  document.getElementById('walletEstBalance').textContent = mask(totalUsdt.toFixed(2)+' USDT');
+  document.getElementById('walletEstBalanceUsdt').textContent = '\u2248 ' + mask('$'+totalUsdt.toFixed(2));
+
+  document.getElementById('walletAssetList').innerHTML = COINS.map(c=>{
+    const bal = getCoinBalance(u, c.code);
+    const dec = coinDecimals(c.code);
+    return `
+    <div class="wallet-asset-row">
+      <div class="wa-icon" style="background:${c.color};">${c.code.slice(0,1)}</div>
+      <div class="wa-info"><div class="wa-code">${c.code}</div><div class="wa-name">${c.name}</div></div>
+      <div class="wa-amounts">
+        <div class="wa-avail">${mask(bal.available.toFixed(dec))}</div>
+        <div class="wa-locked">${bal.locked>0 ? mask(bal.locked.toFixed(dec))+' in escrow' : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const acts = [...state.walletActivity].sort((a,b)=>b.time-a.time);
+  document.getElementById('walletActivityList').innerHTML = acts.length ? acts.map(a=>`
+    <div class="wallet-activity-row">
+      <div>
+        <div class="wa-act-label">${a.label}</div>
+        <div class="wa-act-time">${fmtOrderTime(a.time)}</div>
+      </div>
+      <div class="wa-act-amt ${a.dir==='in'?'pos':'neg'}">${a.dir==='in'?'+':'-'}${mask(a.amount.toFixed(coinDecimals(a.unit))+' '+a.unit)}</div>
+    </div>
+  `).join('') : `<div class="empty-state" style="padding:30px 20px;">No recent activity.</div>`;
+}
+
+function walletAction(type){
+  state.activeAd = null; state.activeOrder = null;
+  const titles = {deposit:'Deposit', withdraw:'Withdraw', transfer:'Transfer'};
+  document.getElementById('sheetTitle').textContent = titles[type];
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  renderWalletActionForm(type);
+}
+function renderWalletActionForm(type){
+  let recipientHtml = '';
+  if(type==='transfer'){
+    const others = Object.keys(state.users).filter(k=>k!==state.currentUser);
+    recipientHtml = `
+      <div class="form-row">
+        <div class="field" style="flex:1;">
+          <label>Transfer to</label>
+          <select id="waTarget">${others.map(k=>`<option value="${k}">${state.users[k].name}</option>`).join('')}</select>
+        </div>
+      </div>`;
+  }
+  const networkHtml = type==='transfer' ? '' : `
+    <div class="form-row">
+      <div class="field" style="flex:1;">
+        <label>Network</label>
+        <select id="waNetwork" onchange="updateBalanceHint()"></select>
+      </div>
+    </div>`;
+
+  document.getElementById('sheetBody').innerHTML = `
+    <div class="form-row">
+      <div class="field" style="flex:1;">
+        <label>Coin</label>
+        <select id="waCoin" onchange="onWalletCoinChange('${type}')">
+          ${COINS.map(c=>`<option value="${c.code}">${c.code} — ${c.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    ${networkHtml}
+    ${recipientHtml}
+    <div class="form-row">
+      <div class="field" style="flex:1;">
+        <label>Amount</label>
+        <input type="number" id="waAmount" placeholder="0.00" step="0.000001" oninput="updateBalanceHint()">
+      </div>
+    </div>
+    <div class="limit-hint" id="waBalanceHint"></div>
+    <button class="post-submit" onclick="confirmWalletAction('${type}')">Confirm ${type.charAt(0).toUpperCase()+type.slice(1)}</button>
+  `;
+  if(type!=='transfer') updateNetworkOptions();
+  updateBalanceHint();
+}
+function onWalletCoinChange(type){
+  if(type!=='transfer') updateNetworkOptions();
+  updateBalanceHint();
+}
+function updateNetworkOptions(){
+  const coinCode = document.getElementById('waCoin').value;
+  const coin = COINS.find(c=>c.code===coinCode);
+  const sel = document.getElementById('waNetwork');
+  if(sel) sel.innerHTML = coin.networks.map(n=>`<option value="${n}">${n}</option>`).join('');
+}
+function updateBalanceHint(){
+  const coinEl = document.getElementById('waCoin');
+  const hintEl = document.getElementById('waBalanceHint');
+  if(!coinEl || !hintEl) return;
+  const coinCode = coinEl.value;
+  const bal = getCoinBalance(state.users[state.currentUser], coinCode);
+  hintEl.textContent = `Available ${bal.available.toFixed(coinDecimals(coinCode))} ${coinCode}`;
+}
+function confirmWalletAction(type){
+  const u = state.users[state.currentUser];
+  const coinCode = document.getElementById('waCoin').value;
+  const amt = parseFloat(document.getElementById('waAmount').value);
+  if(!amt || amt<=0){ alert('Enter a valid amount.'); return; }
+  const bal = getCoinBalance(u, coinCode);
+
+  if(type==='deposit'){
+    const network = document.getElementById('waNetwork').value;
+    bal.available += amt;
+    state.walletActivity.push({id:'wa-'+state.seq++, label:`Deposit (${network})`, amount:amt, unit:coinCode, dir:'in', time:Date.now()});
+  } else if(type==='withdraw'){
+    const network = document.getElementById('waNetwork').value;
+    if(amt>bal.available){ alert('Amount exceeds your available balance.'); return; }
+    bal.available -= amt;
+    state.walletActivity.push({id:'wa-'+state.seq++, label:`Withdraw (${network})`, amount:amt, unit:coinCode, dir:'out', time:Date.now()});
+  } else if(type==='transfer'){
+    const target = document.getElementById('waTarget').value;
+    if(amt>bal.available){ alert('Amount exceeds your available balance.'); return; }
+    const t = state.users[target];
+    const tbal = getCoinBalance(t, coinCode);
+    bal.available -= amt;
+    tbal.available += amt;
+    state.walletActivity.push({id:'wa-'+state.seq++, label:`Transfer to ${t.name}`, amount:amt, unit:coinCode, dir:'out', time:Date.now()});
+  }
+  closeModal();
+  renderWallet();
 }
 
 function renderProfile(){
